@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spectres — Tableau de bord d'oncogénétique</title>
+<style>
+:root{
+  --paper:#F0F2F2; --card:#FFFFFF; --ink:#202426; --ink-soft:#4C5453; --line:#D2D9D6;
+  --acc:#0E7A6C; --acc-2:#3AA491; --acc-soft:#E0F0EB; --track:#DAE5E1;
+  --blue:#31699C; --blue-soft:#E3EDF6;
+  --amber:#7D5104; --amber-soft:#F5EDD8; --amber-ink:#5C3D08;
+  --berry:#8A3352; --berry-soft:#F6E4EB;
+  --code-bg:#EAEEEC; --hover:#F6F9F8; --mark:#F3E3A8;
+  --shadow:0 18px 50px rgba(20,40,35,.25);
+  --mono:"Consolas","Menlo","DejaVu Sans Mono",monospace;
+  --serif:Georgia,"Times New Roman",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+html[data-theme="dark"]{
+  --paper:#1B1B1E; --card:#242428; --ink:#EAE8E3; --ink-soft:#A9A7A0; --line:#3C3C42;
+  --acc:#E98A3C; --acc-2:#F2AE62; --acc-soft:#3A2D1D; --track:#34312C;
+  --blue:#8CC3B5; --blue-soft:#263430;
+  --amber:#D9B45B; --amber-soft:#322B17; --amber-ink:#E3CB84;
+  --berry:#D993A6; --berry-soft:#342228;
+  --code-bg:#2F2F34; --hover:#2B2B30; --mark:#57431D;
+  --shadow:0 18px 60px rgba(0,0,0,.55);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;scroll-behavior:smooth}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.6;min-height:100vh}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 44px,color-mix(in srgb,var(--acc) 4%,transparent) 44px,color-mix(in srgb,var(--acc) 4%,transparent) 45px),
+             repeating-linear-gradient(90deg,transparent,transparent 44px,color-mix(in srgb,var(--acc) 4%,transparent) 44px,color-mix(in srgb,var(--acc) 4%,transparent) 45px)}
+header{position:relative;z-index:2;padding:26px 24px 14px;max-width:1360px;margin:0 auto;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.eyebrow{font-family:var(--mono);font-size:.68rem;letter-spacing:.24em;text-transform:uppercase;color:var(--acc);margin-bottom:4px}
+h1{font-family:var(--serif);font-weight:400;font-size:clamp(1.6rem,3vw,2.2rem);line-height:1.1}
+h1 em{font-style:italic;color:var(--acc)}
+.hmeta{font-family:var(--mono);font-size:.75rem;color:var(--ink-soft);text-align:right;line-height:1.7}
+.topbar{position:sticky;top:0;z-index:30;background:var(--paper);border-bottom:1.5px solid var(--line);padding:10px 24px}
+.topbar-inner{max-width:1360px;margin:0 auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+#q{flex:1 1 260px;font-size:1rem;padding:11px 14px;border:2px solid var(--line);border-radius:11px;background:var(--card);color:var(--ink);outline:none}
+#q:focus{border-color:var(--acc)}
+#q::placeholder{color:var(--ink-soft);opacity:.75}
+.tabs{display:flex;gap:6px}
+.tab{border:2px solid var(--line);background:var(--card);color:var(--ink-soft);padding:9px 15px;border-radius:11px;cursor:pointer;font-size:.92rem;font-weight:600}
+.tab.on{background:var(--acc);border-color:var(--acc);color:#fff}
+html[data-theme="dark"] .tab.on{color:#1B1B1E}
+.tool{border:2px solid var(--line);background:var(--card);color:var(--ink);padding:9px 12px;border-radius:11px;cursor:pointer;font-size:.9rem;font-weight:600;margin-left:auto}
+.tool:hover,.tab:hover{border-color:var(--acc)}
+button:focus-visible,#q:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.layout{position:relative;z-index:1;max-width:1360px;margin:0 auto;padding:18px 24px 70px;display:grid;grid-template-columns:230px 1fr;gap:22px;align-items:start}
+.layout.nosb{grid-template-columns:1fr}
+aside.sb{position:sticky;top:76px;display:flex;flex-direction:column;gap:18px}
+.s-label{font-family:var(--mono);font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:7px}
+.catbtn{display:flex;justify-content:space-between;gap:8px;width:100%;text-align:left;background:none;border:none;border-left:3px solid transparent;color:var(--ink-soft);padding:7px 10px;font-size:.9rem;cursor:pointer;border-radius:0 8px 8px 0}
+.catbtn:hover{background:var(--hover);color:var(--ink)}
+.catbtn.on{border-left-color:var(--acc);color:var(--acc);font-weight:700;background:var(--acc-soft)}
+.catbtn small{color:var(--ink-soft);font-family:var(--mono);font-size:.75rem}
+.trbtns{display:flex;flex-wrap:wrap;gap:6px}
+.trb{border:1.5px solid var(--line);background:var(--card);color:var(--ink-soft);border-radius:16px;padding:5px 11px;font-size:.8rem;cursor:pointer}
+.trb.on{border-color:var(--acc);color:var(--acc);background:var(--acc-soft);font-weight:700}
+.count{font-family:var(--mono);font-size:.75rem;color:var(--ink-soft);border-top:1px solid var(--line);padding-top:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.gcard{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:15px 16px;cursor:pointer;transition:transform .12s ease,border-color .12s ease,box-shadow .12s ease;display:flex;flex-direction:column;gap:9px}
+.gcard:hover{transform:translateY(-2px);border-color:var(--acc);box-shadow:0 8px 22px rgba(0,0,0,.08)}
+.gc-cat{font-family:var(--mono);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--acc)}
+.gc-name{font-family:var(--serif);font-size:1.08rem;line-height:1.3}
+.gc-genes{display:flex;flex-wrap:wrap;gap:5px}
+.gpill{font-family:var(--mono);font-size:.78rem;font-weight:600;background:var(--acc-soft);color:var(--acc);border-radius:6px;padding:2px 8px}
+.gpill.more{background:transparent;color:var(--ink-soft)}
+.gc-prev{display:flex;flex-direction:column;gap:5px;margin-top:auto}
+.gc-row{display:grid;grid-template-columns:1fr 64px;gap:8px;align-items:center;font-size:.8rem;color:var(--ink-soft)}
+.gc-row .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.minitrack{height:7px;background:var(--track);border-radius:4px;overflow:hidden}
+.minibar{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--acc),var(--acc-2));min-width:4px}
+.chips{display:flex;flex-wrap:wrap;gap:9px}
+.chip{background:var(--card);border:2px solid var(--line);border-radius:22px;padding:9px 16px;cursor:pointer;font-size:.95rem;color:var(--ink)}
+.chip small{color:var(--ink-soft);margin-left:6px}
+.chip:hover{border-color:var(--acc);color:var(--acc)}
+.meta{color:var(--ink-soft);font-size:.85rem;margin:2px 2px 14px}
+.pane-title{font-family:var(--serif);font-size:1.55rem;margin:2px 0}
+.pane-sub{color:var(--ink-soft);font-size:.88rem;margin-bottom:14px}
+.back{background:none;border:none;color:var(--acc);cursor:pointer;font-size:.95rem;font-weight:600;padding:6px 0;margin-bottom:6px}
+.empty{color:var(--ink-soft);padding:30px 6px;font-size:.95rem}
+.orow{background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:11px 14px;margin-bottom:9px;display:grid;grid-template-columns:minmax(150px,1.2fr) minmax(120px,1fr) auto;gap:10px;align-items:center}
+.orow:hover{border-color:var(--acc)}
+.hitgroup{margin:16px 0 6px;font-family:var(--mono);font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft);font-weight:700}
+/* ── panneau latéral fiche ── */
+.overlay{position:fixed;inset:0;background:rgba(10,14,13,.45);opacity:0;pointer-events:none;transition:opacity .18s ease;z-index:60}
+.overlay.open{opacity:1;pointer-events:auto}
+.panel{position:fixed;top:0;right:0;bottom:0;width:min(620px,94vw);background:var(--card);border-left:2px solid var(--acc);box-shadow:var(--shadow);transform:translateX(102%);transition:transform .22s ease;z-index:70;display:flex;flex-direction:column}
+.panel.open{transform:translateX(0)}
+.p-head{display:flex;align-items:flex-start;gap:10px;padding:18px 20px 12px;border-bottom:1.5px solid var(--line)}
+.p-eyebrow{font-family:var(--mono);font-size:.64rem;letter-spacing:.2em;text-transform:uppercase;color:var(--acc)}
+.p-title{font-family:var(--serif);font-size:1.45rem;line-height:1.25;margin-top:2px}
+.p-alias{color:var(--ink-soft);font-size:.83rem;margin-top:3px}
+.p-actions{margin-left:auto;display:flex;gap:6px;flex-shrink:0}
+.p-btn{border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:9px;padding:7px 11px;cursor:pointer;font-size:.85rem}
+.p-btn:hover{border-color:var(--acc);color:var(--acc)}
+.p-body{overflow-y:auto;padding:14px 20px 30px;flex:1}
+.factline{display:flex;flex-wrap:wrap;gap:16px;color:var(--ink-soft);font-size:.88rem;margin-bottom:6px}
+.factline b{color:var(--ink);font-weight:700}
+.sec{margin:18px 0 0}
+.sec-h{font-size:.78rem;letter-spacing:1.4px;text-transform:uppercase;font-weight:800;display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.sec-h::before{content:"";width:20px;height:4px;border-radius:2px;background:currentColor}
+.h-spec{color:var(--acc)} .h-gene{color:var(--ink)} .h-var{color:var(--ink)}
+.h-crit{color:var(--amber)} .h-surv{color:var(--blue)} .h-ttt{color:var(--berry)} .h-src{color:var(--ink-soft)}
+.trow{display:grid;grid-template-columns:minmax(140px,1.2fr) minmax(110px,1fr) auto;gap:10px;align-items:center;padding:7px 4px;border-bottom:1px dashed var(--line);border-radius:8px}
+.trow:hover{background:var(--hover)}
+.trow:last-child{border-bottom:none}
+.tname{font-size:.95rem;font-weight:500}
+.tnote{color:var(--ink-soft);font-size:.82rem;display:block;font-weight:400;margin-top:2px}
+.torg{font-size:.75rem;font-weight:600;color:var(--blue);background:var(--blue-soft);border-radius:6px;padding:2px 7px;margin-left:6px;white-space:nowrap;cursor:pointer;display:inline-block}
+.torg:hover{text-decoration:underline}
+.bartrack{height:13px;background:var(--track);border-radius:7px;overflow:hidden}
+.bar{height:100%;border-radius:7px;background:linear-gradient(90deg,var(--acc),var(--acc-2));position:relative;min-width:7px}
+.bar::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(255,255,255,.25) 0 6px,transparent 6px 15px);border-radius:7px}
+html[data-theme="dark"] .bar::after{background:repeating-linear-gradient(90deg,rgba(0,0,0,.28) 0 6px,transparent 6px 15px)}
+.rtxt{font-family:var(--mono);font-size:.85rem;font-weight:700;text-align:right;min-width:100px}
+.nobar{font-size:.8rem;color:var(--ink-soft);font-style:italic}
+ul.plain{list-style:none}
+ul.plain li{padding:5px 0 5px 18px;position:relative;font-size:.92rem}
+ul.plain li::before{content:"–";position:absolute;left:2px;color:var(--ink-soft);font-weight:700}
+.sec-crit ul.plain li::before{color:var(--amber)} .sec-surv ul.plain li::before{color:var(--blue)} .sec-ttt ul.plain li::before{color:var(--berry)}
+.vrow{font-size:.92rem;padding:4px 0}
+.vrow code{font-family:var(--mono);font-size:.86rem;background:var(--code-bg);border-radius:6px;padding:2px 7px}
+.vrow span,.generow span{color:var(--ink-soft);font-size:.85rem}
+.generow{font-size:.92rem;padding:4px 0}
+.generow b{font-family:var(--mono);font-weight:700;color:var(--acc)}
+.srcs{font-size:.8rem;color:var(--ink-soft)}
+mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 1px}
+footer{position:relative;z-index:1;max-width:1360px;margin:0 auto 40px;padding:0 24px;color:var(--ink-soft);font-size:.78rem}
+.dwrap{padding:0 24px}
+/* ── poignée de redimensionnement du panneau ── */
+.p-resize{position:absolute;left:0;top:0;bottom:0;width:9px;cursor:ew-resize;z-index:5;touch-action:none}
+.p-resize::after{content:"";position:absolute;left:2px;top:50%;transform:translateY(-50%);width:3px;height:52px;border-radius:2px;background:var(--line)}
+.p-resize:hover::after,.panel.resizing .p-resize::after{background:var(--acc)}
+.panel.resizing{transition:none;user-select:none}
+/* ── diagnostic différentiel ── */
+.diag-intro{margin-bottom:14px}
+.diag-title{font-family:var(--serif);font-size:1.45rem;margin-bottom:4px}
+.diag-sub{color:var(--ink-soft);font-size:.88rem}
+.dgroup{margin-bottom:16px}
+.dgroup-t{font-family:var(--mono);font-size:.64rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:7px}
+.dchips{display:flex;flex-wrap:wrap;gap:7px}
+.dchip{border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:9px;padding:7px 12px;font-size:.88rem;cursor:pointer;user-select:none;display:flex;align-items:center;gap:7px}
+.dchip::before{content:"";width:13px;height:13px;border:2px solid var(--line);border-radius:4px;flex-shrink:0;background:var(--card)}
+.dchip:hover{border-color:var(--acc)}
+.dchip.on{border-color:var(--acc);background:var(--acc-soft);color:var(--acc);font-weight:600}
+.dchip.on::before{background:var(--acc);border-color:var(--acc)}
+.diag-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:6px 0 16px;padding:10px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--card)}
+.diag-count{font-family:var(--mono);font-size:.8rem;color:var(--ink-soft)}
+.diag-clear{border:none;background:none;color:var(--acc);cursor:pointer;font-size:.85rem;font-weight:600;text-decoration:underline dotted}
+.dres{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:11px;cursor:pointer}
+.dres:hover{border-color:var(--acc)}
+.dres-head{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px}
+.dres-name{font-family:var(--serif);font-size:1.1rem}
+.dres-score{font-family:var(--mono);font-size:.78rem;font-weight:700;color:var(--acc);background:var(--acc-soft);border-radius:6px;padding:2px 8px;white-space:nowrap}
+.dres-genes{color:var(--ink-soft);font-size:.8rem;font-family:var(--mono);margin-bottom:6px}
+@media (max-width:880px){
+  .layout{grid-template-columns:1fr}
+  aside.sb{position:static;flex-direction:row;flex-wrap:wrap;gap:14px}
+  .sb>div{min-width:180px}
+  .hmeta{display:none}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.panel,.overlay,.gcard{transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="eyebrow">Atlas · Oncogénétique · Prédispositions héréditaires</div>
+    <h1>Spectres <em>tumoraux</em></h1>
+  </div>
+  <div class="hmeta" id="hmeta"></div>
+</header>
+<div class="topbar">
+  <div class="topbar-inner">
+    <input id="q" type="search" autocomplete="off" placeholder="Rechercher : syndrome, gène, organe, tumeur…  [touche /]" aria-label="Recherche">
+    <div class="tabs" role="tablist">
+      <button class="tab on" data-mode="syn" role="tab">Syndromes</button>
+      <button class="tab" data-mode="org" role="tab">Par organe</button>
+      <button class="tab" data-mode="gen" role="tab">Par gène</button>
+      <button class="tab" data-mode="diag" role="tab">Diagnostic</button>
+    </div>
+    <button class="tool" id="t-theme" title="Mode sombre / clair">◐</button>
+  </div>
+</div>
+<div class="layout" id="layout">
+  <aside class="sb" id="side"></aside>
+  <section id="content"></section>
+</div>
+<footer>Sources principales : GeneReviews · NCCN Genetic/Familial High-Risk Assessment · PLSD (Dominguez-Valentin 2020) · Kuchenbaecker JAMA 2017 · GGC-Unicancer, ERN GENTURIS, ATA 2015 (MEN2), IGCLC 2020 (CDH1), C4CMMRD.</footer>
+<div class="overlay" id="overlay"></div>
+<div class="panel" id="panel" role="dialog" aria-modal="true" aria-label="Fiche syndrome"></div>
+<script>
+const CATS={sein:"Sein & gynécologie",dig:"Tube digestif & pancréas",endo:"Endocrinien & phéo/paragangliome",uro:"Rein & urologie",peau:"Peau & mélanome",neuro:"Système nerveux & œil",ped:"Pédiatrique & tumeurs embryonnaires",hemato:"Hématologie",rep:"Réparation ADN & syndromes cassants",os:"Os, sarcomes & divers"};
+const DATA=[
+{id:"hboc",nom:"Sein–ovaire héréditaire (BRCA1/BRCA2)",al:["HBOC","BRCA","syndrome sein ovaire"],cat:"sein",pre:"≈ 1/300–1/500 (BRCA1+2)",tr:"AD",
+genes:[["BRCA1","recombinaison homologue ; formes plus précoces, sein souvent triple négatif"],["BRCA2","recombinaison homologue ; spectre plus large : prostate, pancréas, sein masculin"]],
+sp:[["Sein (femme) — BRCA1",["Sein"],"65–79 % à 80 ans",72,"souvent triple négatif, précoce ; controlatéral ≈ 40 % à 20 ans"],
+["Sein (femme) — BRCA2",["Sein"],"61–77 % à 80 ans",69,"phénotype plus proche du sporadique (RH+)"],
+["Ovaire — BRCA1",["Ovaire"],"39–58 % à 80 ans",44,"séreux de haut grade ; trompe/péritoine inclus ; dès 40 ans"],
+["Prostate — BRCA2",["Prostate"],"≈ 27 % à 80 ans",27,"formes agressives, début plus précoce (Nyberg 2020)"],
+["Ovaire — BRCA2",["Ovaire"],"13–23 % à 80 ans",17,"plus tardif que BRCA1 (rarement avant 45 ans)"],
+["Sein (homme) — BRCA2",["Sein"],"≈ 5–8 % vie entière",7,"tout cancer du sein masculin justifie le test"],
+["Pancréas — BRCA2",["Pancréas"],"≈ 3–7 % vie entière",5,"BRCA1 : ≈ 1–3 %"],
+["Mélanome — BRCA2",["Peau"],"légèrement accru",null,"cutané et uvéal (association modeste)"]],
+va:[["BRCA1 c.68_69del (p.Glu23Valfs*17)","fondateur ashkénaze (185delAG)"],["BRCA1 c.5266dup (p.Gln1756Profs*74)","fondateur ashkénaze / Europe de l'Est (5382insC)"],["BRCA2 c.5946del (p.Ser1982Argfs*22)","fondateur ashkénaze (6174delT)"],["BRCA1 c.798_799del (p.Ser267Lysfs*19)","fondateur nord-africain récurrent (Maroc, Algérie, Tunisie)"]],
+cr:["Score d'Eisinger (somme par branche parentale) : mutation identifiée = 5 ; sein < 30 ans = 4 ; sein 30–39 = 3 ; sein 40–49 = 2 ; sein 50–70 = 1 ; sein masculin = 4 ; ovaire = 3. Score ≥ 3 → consultation d'oncogénétique (≥ 5 : indication excellente)",
+"Test quel que soit le contexte familial : carcinome ovarien épithélial de haut grade ; cancer du sein ≤ 40 ans ; sein triple négatif (≤ 60 ans, NCCN : à discuter à tout âge) ; sein masculin ; adénocarcinome pancréatique ; prostate métastatique ou d'emblée haut risque",
+"Analyse en panel (BRCA1/2, PALB2, ± ATM, CHEK2, RAD51C/D, BARD1, TP53, PTEN, CDH1 selon présentation)"],
+su:["Femme : IRM mammaire annuelle + mammographie dès 30 ans (IRM seule avant 35 ans possible)","Annexectomie bilatérale prophylactique : dès 40 ans (BRCA1), 45 ans (BRCA2), après projet parental","Mastectomie de réduction de risque : à discuter (réduit le risque > 90 %)","Homme BRCA2 : PSA + toucher rectal annuels dès 40 ans","Pancréas : imagerie (IRM/écho-endoscopie) seulement si antécédent familial de cancer du pancréas"],
+tt:["Inhibiteurs de PARP sur mutation germinale BRCA : olaparib adjuvant (sein HER2− haut risque, OlympiA), sein métastatique HER2− (OlympiAD ; talazoparib EMBRACA), entretien 1re ligne ovaire (SOLO-1 ; niraparib, rucaparib), entretien pancréas métastatique (POLO), prostate résistante à la castration (PROfound)","Sensibilité accrue aux sels de platine (sein TN, ovaire, pancréas)","Contraception/THS : à discuter au cas par cas après annexectomie"],
+src:["Kuchenbaecker, JAMA 2017 (risques prospectifs)","Nyberg 2020 (prostate)","NCCN Genetic/Familial High-Risk : Breast, Ovarian & Pancreatic","GGC-Unicancer","GeneReviews : BRCA1/2-Associated HBOC"]},
+
+{id:"palb2",nom:"Prédisposition PALB2",al:["partner and localizer of BRCA2"],cat:"sein",pre:"≈ 1/1000",tr:"AD",
+genes:[["PALB2","partenaire de BRCA2 ; biallélique = anémie de Fanconi type N"]],
+sp:[["Sein (femme)",["Sein"],"≈ 40–60 % à 80 ans (53 %)",53,"3e gène majeur du sein après BRCA1/2 (Yang, JCO 2020)"],
+["Ovaire",["Ovaire"],"≈ 3–5 %",4,""],
+["Pancréas",["Pancréas"],"≈ 2–5 %",3,""],
+["Sein (homme)",["Sein"],"≈ 1 %",1,""]],
+va:[["PALB2 c.1592del (p.Leu531Cysfs*30)","fondateur finlandais"],["PALB2 c.3113G>A (p.Trp1038*)","récurrent (Royaume-Uni, Australie)"]],
+cr:["Inclus dans les panels sein-ovaire (mêmes portes d'entrée que BRCA : Eisinger ≥ 3, sein précoce, TN, pancréas)"],
+su:["IRM mammaire annuelle + mammographie dès 30 ans (prise en charge calquée sur BRCA)","Annexectomie : à discuter vers 45–50 ans si histoire familiale d'ovaire","Pancréas : imagerie si antécédent familial"],
+tt:["Inhibiteurs de PARP actifs (olaparib, étude TBCRC 048 — mutations germinales PALB2) ; sensibilité aux platines"],
+src:["Yang, JCO 2020 (53 % sein)","Antoniou, NEJM 2014","NCCN","GeneReviews"]},
+
+{id:"atm",nom:"Prédisposition ATM (hétérozygote)",al:["ataxie télangiectasie hétérozygote"],cat:"sein",pre:"≈ 1–2 % de la population porteuse",tr:"AD (risque modéré)",
+genes:[["ATM","kinase de réponse aux cassures double-brin ; biallélique = ataxie-télangiectasie (voir fiche dédiée)"]],
+sp:[["Sein (femme)",["Sein"],"≈ 20–30 % à 80 ans (RR ×2–3)",25,"c.7271T>G : risque nettement plus élevé (≈ 50–60 %)"],
+["Pancréas",["Pancréas"],"≈ 2–5 % (RR ×2–4)",4,""],
+["Prostate",["Prostate"],"modérément accru",null,""],
+["Estomac",["Estomac"],"légèrement accru",null,""]],
+va:[["ATM c.7271T>G (p.Val2424Gly)","effet dominant-négatif, risque mammaire quasi-BRCA2"]],
+cr:["Découverte en panel sein/pancréas ; interprétation prudente des variants faux-sens"],
+su:["IRM mammaire annuelle dès 40 ans (dès 30–35 ans si c.7271T>G ou histoire familiale forte)","Pancréas : imagerie si antécédent familial","Pas d'annexectomie prophylactique (pas d'excès ovarien démontré)"],
+tt:["Pas d'indication germinale validée des PARPi à ce jour (essais en cours)","Éviter l'irradiation médicale répétée non justifiée (radiosensibilité relative débattue chez l'hétérozygote)"],
+src:["Marabelli 2016 (méta-analyse)","NCCN","GeneReviews : ATM"]},
+
+{id:"chek2",nom:"Prédisposition CHEK2",al:["CHK2"],cat:"sein",pre:"c.1100del : ≈ 0,5–1 % (Europe du Nord)",tr:"AD (risque modéré)",
+genes:[["CHEK2","kinase checkpoint ; risque modéré multi-sites"]],
+sp:[["Sein (femme)",["Sein"],"≈ 20–30 % (RR ×2 ; ×4 si ATCD familiaux)",25,"c.1100del ; p.Ile157Thr : risque plus faible (RR ≈ 1,4)"],
+["Côlon-rectum",["Côlon-rectum"],"légèrement accru (RR ≈ 1,5–2)",null,""],
+["Prostate",["Prostate"],"modérément accru",null,""],
+["Thyroïde",["Thyroïde"],"modérément accru",null,""]],
+va:[["CHEK2 c.1100del (p.Thr367Metfs*15)","fondateur nord-européen"],["CHEK2 p.Ile157Thr","faible pénétrance"]],
+cr:["Découverte en panel ; le conseil intègre l'histoire familiale (risque très dépendant du contexte)"],
+su:["IRM mammaire annuelle dès 40 ans si c.1100del + histoire familiale ; sinon dépistage renforcé","Coloscopie dès 40 ans si agrégation familiale colique"],
+tt:["Aucune thérapie ciblée germinale validée"],
+src:["NCCN","Cybulski 2011","GeneReviews"]},
+
+{id:"rad51",nom:"Prédisposition RAD51C / RAD51D / BRIP1",al:["gènes ovaire modérés","FANCJ"],cat:"sein",pre:"rares",tr:"AD",
+genes:[["RAD51C","biallélique = Fanconi type O"],["RAD51D",""],["BRIP1","biallélique = Fanconi type J"]],
+sp:[["Ovaire — RAD51D",["Ovaire"],"≈ 10–13 %",12,"séreux haut grade"],
+["Ovaire — RAD51C",["Ovaire"],"≈ 10–11 %",11,""],
+["Ovaire — BRIP1",["Ovaire"],"≈ 5–8 %",6,""],
+["Sein — RAD51C/D",["Sein"],"modérément accru (RR ≈ 2, triple négatif)",null,""]],
+va:[],
+cr:["Panels ovaire (tout carcinome séreux de haut grade) et sein"],
+su:["Annexectomie prophylactique à discuter vers 45–50 ans","Sein : surveillance renforcée selon histoire familiale"],
+tt:["PARPi : activité via déficit de recombinaison homologue (HRD) en contexte tumoral ovarien"],
+src:["Yang 2020","Ramus 2015 (BRIP1)","NCCN","GeneReviews"]},
+
+{id:"lynch",nom:"Syndrome de Lynch",al:["HNPCC","cancer colorectal héréditaire sans polypose","Muir-Torre","Turcot type 1"],cat:"dig",pre:"≈ 1/300 (prédisposition la plus fréquente)",tr:"AD",
+genes:[["MLH1","réparation des mésappariements (MMR) ; risque colique le plus élevé"],["MSH2","spectre extra-colique large (urothélium, peau : Muir-Torre) ; risques ≈ MLH1"],["MSH6","phénotype atténué, dominante endométriale chez la femme"],["PMS2","pénétrance la plus faible, formes tardives"],["EPCAM","délétions 3' → extinction épigénétique de MSH2 (phénotype MSH2, endomètre moindre)"]],
+sp:[["Côlon-rectum — MLH1/MSH2",["Côlon-rectum"],"≈ 35–55 % à 75 ans",46,"précoce (40–45 ans), côlon droit, tumeurs synchrones/métachrones ; MSH6 ≈ 10–20 %, PMS2 ≈ 9–13 %"],
+["Endomètre — MSH2/MSH6",["Endomètre / utérus"],"≈ 40–50 % à 75 ans",45,"MLH1 ≈ 35 % ; PMS2 ≈ 13 % ; souvent tumeur sentinelle chez la femme"],
+["Ovaire — MLH1/MSH2",["Ovaire"],"≈ 10–17 %",13,"endométrioïde/cellules claires, pronostic meilleur que séreux ; MSH6 ≈ 11 %"],
+["Voies urinaires — MSH2",["Voies urinaires / vessie"],"≈ 8–15 % (MSH2)",10,"urothélium : bassinet, uretère ; nettement plus rare pour les autres gènes"],
+["Estomac",["Estomac"],"≈ 5–8 %",6,"rechercher et éradiquer H. pylori"],
+["Intestin grêle",["Intestin grêle / duodénum"],"≈ 3–5 %",4,""],
+["Prostate — MSH2",["Prostate"],"accru (MSH2 surtout)",null,""],
+["Pancréas / voies biliaires",["Pancréas"],"≈ 2–6 %",3,""],
+["SNC (glioblastome)",["Cerveau / SNC"],"≈ 1–4 %",2,"« Turcot type 1 »"],
+["Peau (Muir-Torre)",["Peau"],"adénomes/carcinomes sébacés, kérato-acanthomes",null,"surtout MSH2"]],
+va:[["MSH2 p.Ala636Pro","fondateur ashkénaze"],["MLH1 délétion exon 16","fondateur finlandais"],["Épimutation constitutionnelle MLH1","rare, souvent non transmise — à évoquer si IHC MLH1− sans variant"]],
+cr:["Dépistage universel : IHC des 4 protéines MMR (± MSI) sur TOUT cancer colorectal et de l'endomètre ; si perte MLH1/PMS2 → rechercher hyperméthylation du promoteur MLH1 / BRAF V600E (CCR) avant de conclure au germinal",
+"Amsterdam II : ≥ 3 apparentés avec cancer du spectre (CCR, endomètre, grêle, urothélium), sur 2 générations, dont 1 apparenté au 1er degré des 2 autres et 1 cas < 50 ans, polypose exclue",
+"Bethesda révisés : CCR < 50 ans ; CCR synchrones/métachrones ou autre tumeur du spectre ; CCR MSI-H < 60 ans ; CCR + apparenté 1er degré avec tumeur du spectre < 50 ans ; CCR + ≥ 2 apparentés avec tumeur du spectre"],
+su:["Coloscopie avec chromoendoscopie (indigo carmin) tous les 1–2 ans : dès 20–25 ans (MLH1/MSH2), dès 30–35 ans (MSH6/PMS2)","Gastroscopie avec recherche/éradication de H. pylori (couplée aux coloscopies)","Femme : information sur les signes gynécologiques ; hystérectomie + annexectomie prophylactiques à proposer après accomplissement du projet parental (≈ 40–45 ans, selon le gène)","Pas de dépistage urinaire systématique validé (cytologie à discuter si MSH2 + ATCD familiaux urothéliaux)"],
+tt:["Tumeurs dMMR/MSI-H : immunothérapie anti-PD-1 — pembrolizumab (agnostique et 1re ligne CCR métastatique, KEYNOTE-177), dostarlimab (endomètre dMMR ; rectum dMMR néoadjuvant : réponses complètes cliniques quasi constantes, Cercek NEJM 2022), nivolumab ± ipilimumab","Chimioprévention par aspirine : CAPP2 (600 mg/j, ≈ −50 % de CCR) ; dose optimale à l'étude (CaPP3) — souvent 150–300 mg/j en pratique","Colectomie étendue (plutôt que segmentaire) à discuter en cas de CCR chez un sujet jeune (risque métachrone ≈ 36 % à 30 ans)"],
+src:["PLSD — Dominguez-Valentin, Genet Med 2020","Møller 2017","CAPP2 (Burn, Lancet)","KEYNOTE-177","NCCN Colorectal Genetics","GGC-Unicancer"]},
+
+{id:"cmmrd",nom:"Déficience MMR constitutionnelle (CMMRD)",al:["déficit MMR biallélique","syndrome CMMRD"],cat:"ped",pre:"très rare (consanguinité +)",tr:"AR (biallélique MMR)",
+genes:[["PMS2","le plus fréquent en biallélique"],["MSH6",""],["MLH1",""],["MSH2",""]],
+sp:[["Hémopathies (lymphomes T, LAL/LAM)",["Sang / moelle"],"≈ 30–40 % dès l'enfance",35,"souvent premier événement"],
+["Tumeurs cérébrales (glioblastome, médulloblastome)",["Cerveau / SNC"],"≈ 40–50 %",45,"hypermutées → immunothérapie"],
+["Côlon-rectum (polypose + cancer)",["Côlon-rectum"],"très élevé dès l'adolescence",70,"polypes adénomateux multiples mimant une FAP/MAP"],
+["Grêle, endomètre, voies urinaires",["Intestin grêle / duodénum","Endomètre / utérus","Voies urinaires / vessie"],"accrus (adulte jeune)",null,""]],
+va:[],
+cr:["Y penser devant : cancer du spectre Lynch chez l'enfant, taches café-au-lait « NF1-like » sans NF1, lymphome T + consanguinité, polypose de l'adolescent, tumeur cérébrale hypermutée","Parents = porteurs Lynch hétérozygotes (conseil familial ++)"],
+su:["Protocole C4CMMRD/ERN : coloscopie annuelle dès 8 ans, gastroscopie + vidéocapsule dès 10 ans, IRM cérébrale tous les 6–12 mois dès le diagnostic, NFS régulière, écho abdominale ± examen gynécologique dès l'adolescence"],
+tt:["Tumeurs ultra-hypermutées : immunothérapie anti-PD-1 (réponses notables dans les gliomes)","Éviter temozolomide (inefficace sur dMMR, mutagène)"],
+src:["Wimmer 2014 (critères C4CMMRD)","ERN GENTURIS","Bouffet JCO 2016 (immunothérapie gliomes)"]},
+
+{id:"fap",nom:"Polypose adénomateuse familiale (APC)",al:["FAP","PAF","Gardner","Turcot type 2","polypose atténuée AFAP"],cat:"dig",pre:"≈ 1/8000–1/10 000",tr:"AD (25–30 % de novo)",
+genes:[["APC","voie Wnt ; corrélation génotype-phénotype (codon 1309 sévère ; extrémités 5'/3' et exon 9 : formes atténuées)"]],
+sp:[["Côlon-rectum",["Côlon-rectum"],"≈ 100 % sans colectomie (âge moyen 39 ans)",100,"centaines–milliers d'adénomes dès l'adolescence ; AFAP : ≈ 70 %, plus tardif, < 100 polypes"],
+["Duodénum / ampoule de Vater",["Intestin grêle / duodénum"],"≈ 4–12 %",8,"2e cause de mortalité ; stadification de Spigelman"],
+["Tumeurs desmoïdes",["Tissus mous / sarcomes"],"≈ 10–15 %",12,"bénignes mais agressives (mésentère, paroi) ; favorisées par la chirurgie ; codon > 1444"],
+["Thyroïde (carcinome cribriforme-morulaire)",["Thyroïde"],"≈ 1–2 % (femmes jeunes)",2,"variant papillaire quasi pathognomonique"],
+["Hépatoblastome",["Foie / voies biliaires"],"≈ 1–2 % (< 5 ans)",2,""],
+["Estomac",["Estomac"],"≈ 0,5–1 % (Occident)",1,"polypes glandulo-kystiques fundiques ; risque plus élevé en Asie de l'Est"],
+["Médulloblastome",["Cerveau / SNC"],"< 1 %",1,"« Turcot type 2 »"]],
+va:[["APC c.3927_3931del (codon 1309)","récurrent, phénotype colique sévère et précoce"],["APC p.Ile1307Lys","allèle ashkénaze de faible pénétrance (RR CCR ≈ 2) — ne pas confondre avec une FAP"]],
+cr:["≥ 10–20 adénomes colorectaux cumulés → panel polypose (APC, MUTYH, POLE/POLD1, NTHL1, MSH3…)","Hépatoblastome, tumeur desmoïde, carcinome cribriforme-morulaire : rechercher APC","CHRPE (hypertrophie congénitale de l'épithélium pigmentaire rétinien) multiples/bilatérales = signe d'appel"],
+su:["Recto-sigmoïdoscopie/coloscopie annuelle dès 10–12 ans (AFAP : coloscopie dès 18–20 ans, /1–2 ans)","Colectomie prophylactique (totale + anastomose iléo-rectale, ou coloproctectomie + réservoir selon charge rectale) : généralement 15–25 ans","Gastro-duodénoscopie (vue latérale) dès 25 ans, rythme selon Spigelman","Échographie hépatique + AFP /3–6 mois de 0 à 5 ans chez l'enfant porteur ; palpation/écho thyroïdienne annuelle"],
+tt:["AINS (sulindac, celecoxib) : réduction de la charge polypeuse — adjuvant, ne remplace jamais la chirurgie","Desmoïdes : abstention-surveillance en 1re intention, AINS/anti-œstrogènes, chimiothérapie ou inhibiteurs (essais γ-sécrétase : nirogacestat) si évolutif ; éviter la chirurgie de principe"],
+src:["GeneReviews : APC-Associated Polyposis","NCCN Colorectal Genetics","GGC / Thésaurus SNFGE polyposes"]},
+
+{id:"mutyh",nom:"Polypose associée à MUTYH (MAP)",al:["MAP","MYH"],cat:"dig",pre:"hétérozygotes ≈ 1–2 % ; malades AR rares",tr:"AR (biallélique)",
+genes:[["MUTYH","réparation par excision de base (8-oxo-guanine) ; signature tumorale de transversions G:C→T:A, KRAS c.34G>T"]],
+sp:[["Côlon-rectum",["Côlon-rectum"],"≈ 45–70 % à 70 ans sans surveillance",60,"polypose atténuée (10–100 adénomes, parfois festonnés) vers 45–55 ans"],
+["Duodénum",["Intestin grêle / duodénum"],"≈ 4 %",4,""],
+["Autres (ovaire, vessie, peau — sébacés)",["Ovaire","Voies urinaires / vessie","Peau"],"modérément accrus",null,""]],
+va:[["MUTYH p.Tyr179Cys","≈ 50 % des allèles européens (phénotype plus sévère)"],["MUTYH p.Gly396Asp","≈ 30 % des allèles européens"]],
+cr:["Polypose atténuée à transmission « horizontale » (fratrie atteinte, parents indemnes) → MUTYH biallélique","Hétérozygotes simples : risque CCR à peine accru (RR ≈ 1,1–1,5) — coloscopie selon histoire familiale seulement"],
+su:["Biallélique : coloscopie /1–2 ans dès 18–25 ans ; gastro-duodénoscopie dès 25–30 ans ; colectomie si charge incontrôlable"],
+tt:["Pas de thérapie ciblée germinale ; tumeurs parfois hypermutées → discuter immunothérapie au cas par cas"],
+src:["GeneReviews : MUTYH Polyposis","Nielsen 2011","NCCN"]},
+
+{id:"pjs",nom:"Syndrome de Peutz-Jeghers",al:["PJS","lentiginose péri-orificielle"],cat:"dig",pre:"≈ 1/50 000–1/200 000",tr:"AD",
+genes:[["STK11","(LKB1) suppresseur, voie AMPK/mTOR"]],
+sp:[["Tout cancer confondu",["Côlon-rectum"],"≈ 80–90 % à 70 ans",85,"risque global très élevé, multi-organes"],
+["Sein",["Sein"],"≈ 30–50 %",45,""],
+["Côlon-rectum",["Côlon-rectum"],"≈ 39 %",39,""],
+["Estomac",["Estomac"],"≈ 29 %",29,""],
+["Pancréas",["Pancréas"],"≈ 10–35 %",15,"un des risques pancréatiques les plus élevés"],
+["Ovaire (SCTAT, cordons sexuels)",["Ovaire"],"≈ 20 %",20,"tumeurs des cordons sexuels à tubules annulaires"],
+["Intestin grêle",["Intestin grêle / duodénum"],"≈ 13 %",13,"+ invaginations sur hamartomes dès l'enfance"],
+["Col utérin (adenoma malignum)",["Col utérin"],"≈ 10 %",10,"adénocarcinome à déviation minime"],
+["Poumon",["Poumon / plèvre"],"≈ 7–15 %",10,""],
+["Testicule (Sertoli, calcifiantes)",["Testicule"],"rare (enfant : gynécomastie)",null,""]],
+va:[],
+cr:["Clinique : lentiginose labiale/buccale + polypes hamartomateux (musculo-muqueux) du grêle ; ≥ 2 polypes PJ confirmés, ou 1 polype + lentiginose, ou 1 polype/lentiginose + ATCD familial"],
+su:["Vidéocapsule (ou entéro-IRM) + gastroscopie + coloscopie dès 8 ans, puis /2–3 ans (annuel si polypes)","Pancréas : IRM ou écho-endoscopie annuelle dès 30–35 ans","Sein : IRM annuelle dès 25–30 ans ; examen gynécologique + frottis annuels dès 25 ans","Testicules : examen ± échographie dans l'enfance"],
+tt:["Polypectomies itératives (prévention des invaginations et de la dégénérescence) ; entéroscopie double-ballon","Pas de thérapie ciblée germinale validée (inhibiteurs mTOR : essais)"],
+src:["GeneReviews : Peutz-Jeghers","Hearle 2006 / Beggs 2010 (risques)","NCCN"]},
+
+{id:"jps",nom:"Polypose juvénile (SMAD4/BMPR1A)",al:["JPS","polypose hamartomateuse juvénile"],cat:"dig",pre:"≈ 1/100 000",tr:"AD",
+genes:[["SMAD4","forme avec atteinte gastrique sévère + chevauchement Rendu-Osler (HHT)"],["BMPR1A","phénotype plutôt colique"]],
+sp:[["Côlon-rectum",["Côlon-rectum"],"≈ 40–50 % vie entière",45,"sur polypes juvéniles (hamartomes à dysplasie possible)"],
+["Estomac — SMAD4",["Estomac"],"jusqu'à ≈ 20 % (SMAD4)",20,"polypose gastrique massive possible → gastrectomie parfois nécessaire"],
+["Grêle, pancréas",["Intestin grêle / duodénum","Pancréas"],"faiblement accrus",null,""]],
+va:[],
+cr:["≥ 5 polypes juvéniles colorectaux, ou polypes juvéniles multi-étagés, ou ≥ 1 polype juvénile + ATCD familial","SMAD4 : rechercher une maladie de Rendu-Osler associée (épistaxis, MAV pulmonaires → dépistage par écho de contraste/angio-TDM)"],
+su:["Coloscopie + gastroscopie dès 12–15 ans, /1–3 ans selon charge","SMAD4 : dépistage des MAV pulmonaires/cérébrales (protocole HHT)"],
+tt:["Polypectomies ; colectomie/gastrectomie si polypose incontrôlable"],
+src:["GeneReviews : Juvenile Polyposis","NCCN"]},
+{id:"phts",nom:"Syndrome de Cowden / PHTS (PTEN)",al:["Cowden","PTEN hamartoma tumor syndrome","Bannayan-Riley-Ruvalcaba"],cat:"sein",pre:"≈ 1/200 000 (sous-diagnostiqué)",tr:"AD",
+genes:[["PTEN","phosphatase, frein de la voie PI3K/AKT/mTOR"]],
+sp:[["Sein (femme)",["Sein"],"≈ 40–80 % (estimations variables)",60,"précoce (dès 30–40 ans) ; les séries initiales (≈ 85 %) surestiment probablement"],
+["Thyroïde",["Thyroïde"],"≈ 10–35 %",22,"folliculaire > papillaire ; JAMAIS médullaire ; possible dès l'enfance"],
+["Endomètre",["Endomètre / utérus"],"≈ 20–30 %",25,""],
+["Rein",["Rein"],"≈ 15–30 %",20,"carcinomes de types variés"],
+["Côlon-rectum",["Côlon-rectum"],"≈ 9–16 %",12,"polypes mixtes (hamartomes, ganglioneuromes, adénomes)"],
+["Mélanome",["Peau"],"≈ 5 %",5,""]],
+va:[],
+cr:["Signes majeurs : macrocéphalie (> 97e p), trichilemmomes, papillomatose orale, kératoses acrales, gangliocytome dysplasique du cervelet de l'adulte (Lhermitte-Duclos, pathognomonique)","Enfant : macrocéphalie + troubles du spectre autistique ± lipomes/taches génitales pigmentées (Bannayan-Riley-Ruvalcaba)","Utiliser le score de risque de la Cleveland Clinic pour poser l'indication du test"],
+su:["Thyroïde : échographie annuelle dès le diagnostic (y compris chez l'enfant)","Sein : IRM annuelle + mammographie dès 30 ans ; mastectomie de réduction de risque à discuter","Endomètre : sensibilisation aux métrorragies dès 35 ans ± biopsies/échographie ; hystérectomie à discuter après projet parental","Coloscopie dès 35 ans puis /5 ans ; imagerie rénale /2 ans dès 40 ans ; examen cutané annuel"],
+tt:["Pas de thérapie germinale validée (inhibiteurs PI3K/AKT/mTOR : essais dédiés PHTS)"],
+src:["GeneReviews : PTEN Hamartoma Tumor Syndrome","Tan 2012 (risques) et réévaluations ultérieures","NCCN"]},
+
+{id:"lfs",nom:"Syndrome de Li-Fraumeni (TP53)",al:["LFS","SBLA syndrome"],cat:"os",pre:"≈ 1/5 000–1/20 000 (R337H : fréquent au Brésil)",tr:"AD (7–20 % de novo)",
+genes:[["TP53","« gardien du génome » ; corrélations : dominant-négatifs plus sévères"]],
+sp:[["Sein (femme, préménopausique)",["Sein"],"≈ 55–85 % (moteur du risque féminin)",70,"âge médian ≈ 30–35 ans ; souvent HER2+ ; risque global féminin ≈ 90–100 %"],
+["Sarcomes des tissus mous",["Tissus mous / sarcomes"],"≈ 15–25 %",20,"rhabdomyosarcome (anaplasique chez l'enfant), léiomyosarcome…"],
+["Ostéosarcome",["Os"],"≈ 5–15 %",10,"2e pic possible après radiothérapie"],
+["SNC (gliomes, plexus choroïdes)",["Cerveau / SNC"],"≈ 5–15 %",10,"carcinome des plexus choroïdes de l'enfant = drapeau rouge TP53"],
+["Corticosurrénalome",["Surrénale (cortex)"],"≈ 5–10 % (enfant ++)",7,"50–80 % des corticosurrénalomes pédiatriques ont un TP53 germinal"],
+["Leucémies",["Sang / moelle"],"≈ 2–5 %",3,"LAL hypodiploïdes, LAM thérapie-induites"],
+["Autres (poumon, côlon, estomac, mélanome…)",["Poumon / plèvre","Côlon-rectum","Estomac"],"accrus (risque global H ≈ 70–75 %)",null,"tumeurs multiples séquentielles fréquentes"]],
+va:[["TP53 p.Arg337His","fondateur brésilien (Sud/Sud-Est), pénétrance atténuée, corticosurrénalome pédiatrique ++"]],
+cr:["Critères de Chompret (2015) — tester TP53 si : (1) tumeur du spectre LFS (sarcome, sein, SNC, corticosurrénalome, leucémie, cancer bronchique) < 46 ans ET apparenté 1er/2e degré avec tumeur du spectre < 56 ans ou tumeurs multiples ; ou (2) tumeurs primitives multiples dont 2 du spectre, la 1re < 46 ans ; ou (3) corticosurrénalome, carcinome des plexus choroïdes ou rhabdomyosarcome anaplasique quel que soit le contexte ; ou (4) cancer du sein < 31 ans","Tester AVANT radiothérapie chez une femme jeune avec cancer du sein si critères remplis (impact thérapeutique immédiat)"],
+su:["Protocole de type « Toronto » : IRM corps entier annuelle, IRM cérébrale annuelle, examen clinique complet /3–4 mois chez l'enfant (+ écho abdopelvienne, stéroïdes urinaires pour le corticosurrénalome), IRM mammaire annuelle dès 20 ans, coloscopie /2–5 ans dès 25 ans","Échographie mammaire/palpation entre les IRM ; éviter mammographies répétées avant 30 ans"],
+tt:["Limiter la radiothérapie et les agents génotoxiques quand une alternative existe (risque majeur de secondes tumeurs radio-induites) — mastectomie totale plutôt que traitement conservateur + RT","Pas de thérapie ciblée germinale validée"],
+src:["Bougeard, JCO 2015 (Chompret)","Villani, Lancet Oncol 2016 (Toronto)","GeneReviews : Li-Fraumeni","NCCN"]},
+
+{id:"cdh1",nom:"Cancer gastrique diffus héréditaire (CDH1)",al:["HDGC","cancer gastrique diffus","linite héréditaire"],cat:"dig",pre:"rare",tr:"AD",
+genes:[["CDH1","E-cadhérine ; cellules en bague à chaton"],["CTNNA1","α-caténine, phénotype similaire (données plus limitées)"]],
+sp:[["Estomac (adénocarcinome diffus)",["Estomac"],"H ≈ 25–40 %, F ≈ 20–35 %",35,"estimations récentes ; les séries historiques (70 %) surestimaient ; foyers intramuqueux quasi constants à la gastrectomie"],
+["Sein lobulaire (femme)",["Sein"],"≈ 40–55 %",45,"carcinome lobulaire infiltrant"]],
+va:[["CDH1 c.2398del","fondateur (Terre-Neuve)"]],
+cr:["Critères IGCLC 2020 : ≥ 2 cancers gastriques familiaux dont ≥ 1 diffus confirmé ; cancer gastrique diffus < 50 ans ; cancer gastrique diffus + cancer lobulaire du sein (même personne ou famille) ; cancer lobulaire bilatéral ou < 50 ans ; cellules en bague à chaton in situ/pagétoïdes < 50 ans"],
+su:["Sans gastrectomie : gastroscopie annuelle selon protocole de Cambridge (≥ 30 biopsies systématiques + biopsies ciblées) — sensibilité imparfaite","Sein : IRM annuelle + mammographie dès 30 ans"],
+tt:["Gastrectomie totale prophylactique : à proposer entre 20 et 30 ans (avant 40), après discussion multidisciplinaire et bilan nutritionnel","Cancer diffus avéré : chirurgie + chimiothérapie périopératoire (pas de spécificité germinale validée)"],
+src:["Blair, Lancet Oncol 2020 (IGCLC)","Roberts 2019 (pénétrance réévaluée)","GeneReviews : HDGC"]},
+
+{id:"gapps",nom:"GAPPS (APC promoteur 1B)",al:["polypose gastrique et cancer gastrique proximal"],cat:"dig",pre:"très rare",tr:"AD",
+genes:[["APC (promoteur 1B)","variants ponctuels du promoteur 1B → phénotype gastrique isolé"]],
+sp:[["Estomac (fundus, adénocarcinome intestinal)",["Estomac"],"élevé, mal quantifié",null,"polypose glandulo-kystique fundique massive épargnant antre et côlon"]],
+va:[["APC c.-191T>C / c.-192A>G / c.-195A>C (promoteur 1B)","variants récurrents décrits"]],
+cr:["Polypose fundique profuse (> 100) épargnant l'antre, sans polypose colique, ± ATCD familiaux gastriques ; éliminer la prise d'IPP au long cours"],
+su:["Gastroscopies rapprochées ; gastrectomie prophylactique souvent discutée devant l'impossibilité d'une surveillance fiable"],
+tt:["Gastrectomie totale si dysplasie/charge incontrôlable"],
+src:["Worthley 2012 (description)","Li 2016 (promoteur 1B)"]},
+
+{id:"ppap",nom:"Polypose associée aux polymérases (POLE/POLD1)",al:["PPAP","polymerase proofreading polyposis"],cat:"dig",pre:"rare",tr:"AD",
+genes:[["POLE","domaine exonucléasique (relecture) ; tumeurs ultramutées"],["POLD1","idem + risque endométrial"]],
+sp:[["Côlon-rectum",["Côlon-rectum"],"élevé (oligo-polypose adénomateuse, CCR précoce)",null,"quantification imprécise ; adénomes multiples < 100"],
+["Endomètre — POLD1",["Endomètre / utérus"],"accru",null,""],
+["Duodénum, cerveau",["Intestin grêle / duodénum","Cerveau / SNC"],"cas rapportés",null,""]],
+va:[["POLE p.Leu424Val","récurrent (hotspot exonucléasique)"],["POLD1 p.Ser478Asn","récurrent"]],
+cr:["Oligo-polypose adénomateuse APC/MUTYH-négative ; CCR précoce à phénotype ultramuté (charge mutationnelle très élevée, MSS)"],
+su:["Coloscopie /1–2 ans dès 20–25 ans ; gastro-duodénoscopie ; dépistage endométrial (POLD1)"],
+tt:["Tumeurs ultramutées : excellente immunogénicité → immunothérapie anti-PD-1 particulièrement efficace"],
+src:["Palles, Nat Genet 2013","ESMO/Mallorca group update"]},
+
+{id:"nthl1",nom:"Polypose associée à NTHL1",al:["syndrome tumoral NTHL1"],cat:"dig",pre:"très rare (hétérozygotes ≈ 1/300)",tr:"AR (biallélique)",
+genes:[["NTHL1","réparation par excision de base ; signature mutationnelle SBS30"]],
+sp:[["Côlon-rectum (polypose + cancer)",["Côlon-rectum"],"élevé (majorité des biallléliques)",null,"polypose adénomateuse atténuée"],
+["Sein",["Sein"],"accru (≈ 40–60 % des femmes rapportées)",null,"syndrome réellement multi-tumoral"],
+["Endomètre, méningiomes, autres",["Endomètre / utérus","Cerveau / SNC"],"accrus",null,""]],
+va:[["NTHL1 c.268C>T (p.Gln90*)","allèle récurrent majoritaire"]],
+cr:["Polypose APC/MUTYH-négative, surtout si tumeurs multiples (sein + côlon) ou fratrie atteinte (transmission AR)"],
+su:["Coloscopie /1–2 ans dès 18–25 ans ; surveillance mammaire renforcée ; vigilance multi-organes"],
+tt:["Pas de thérapie ciblée germinale"],
+src:["Weren, Nat Genet 2015","Grolleman 2019"]},
+
+{id:"axin2",nom:"Syndrome oligodontie–polypose (AXIN2)",al:["AXIN2"],cat:"dig",pre:"très rare",tr:"AD",
+genes:[["AXIN2","voie Wnt"]],
+sp:[["Côlon-rectum (polypose/CCR)",["Côlon-rectum"],"accru, mal quantifié",null,""]],
+va:[],
+cr:["Agénésies dentaires multiples (oligodontie) + polypes/CCR familiaux ± hypotrichose ectodermique"],
+su:["Coloscopies régulières dès l'âge adulte jeune (calquées sur les polyposes atténuées)"],
+tt:["—"],
+src:["Lammi, AJHG 2004","GeneReviews"]},
+
+{id:"grem1",nom:"Polypose mixte héréditaire (GREM1)",al:["HMPS"],cat:"dig",pre:"quasi exclusivement ashkénaze",tr:"AD",
+genes:[["GREM1","duplication régulatrice 40 kb en amont → surexpression épithéliale"]],
+sp:[["Côlon-rectum",["Côlon-rectum"],"accru (polypes mixtes : adénomateux, festonnés, juvéniles)",null,""]],
+va:[["GREM1 duplication 40 kb (région régulatrice)","fondatrice ashkénaze"]],
+cr:["Polypose d'histologies mixtes chez un sujet d'ascendance ashkénaze, panels classiques négatifs"],
+su:["Coloscopie /1–2 ans dès 25–30 ans"],
+tt:["—"],
+src:["Jaeger, Nat Genet 2012"]},
+
+{id:"prss1",nom:"Pancréatite héréditaire (PRSS1)",al:["pancréatite chronique héréditaire"],cat:"dig",pre:"rare",tr:"AD (pénétrance ≈ 80 % pour la pancréatite)",
+genes:[["PRSS1","trypsinogène cationique, gain de fonction (auto-activation)"],["SPINK1","modificateur, souvent AR/complexe"],["CTRC / CFTR","facteurs de susceptibilité"]],
+sp:[["Pancréas (adénocarcinome)",["Pancréas"],"≈ 10–40 % à 70 ans selon les séries",25,"sur pancréatite chronique évoluant depuis l'enfance ; tabac = multiplicateur majeur (risque doublé et avancé de ≈ 20 ans)"]],
+va:[["PRSS1 p.Arg122His","variant le plus fréquent"],["PRSS1 p.Asn29Ile","2e variant récurrent"]],
+cr:["Pancréatites aiguës récidivantes/chroniques débutant dans l'enfance ou l'adolescence, ± ATCD familiaux, sans cause toxique"],
+su:["Dépistage du cancer (type CAPS) dès 40 ans (ou 20 ans après le début de la pancréatite) : IRM et/ou écho-endoscopie annuelles — rendement limité par les remaniements chroniques","Sevrage tabac/alcool impératif ; prise en charge de l'insuffisance exocrine/endocrine"],
+tt:["Pancréatectomie totale + autotransplantation d'îlots : discutée dans les formes douloureuses réfractaires"],
+src:["Lowenfels 1997 / Howes 2004 (risque)","Recommandations CAPS (Goggins, Gut 2020)"]},
+
+{id:"men1",nom:"Néoplasie endocrinienne multiple de type 1 (MEN1)",al:["NEM1","syndrome de Wermer"],cat:"endo",pre:"≈ 1/30 000",tr:"AD (≈ 10 % de novo)",
+genes:[["MEN1","ménine ; pas de corrélation génotype-phénotype fiable"]],
+sp:[["Hyperparathyroïdie primaire",["Parathyroïdes"],"≈ 95–100 % à 50 ans",95,"atteinte multiglandulaire, récidivante ; révélatrice avant 30 ans le plus souvent"],
+["TNE duodéno-pancréatiques",["Pancréas","Intestin grêle / duodénum"],"≈ 30–75 %",55,"gastrinomes (≈ 40 %, souvent duodénaux multiples, Zollinger-Ellison), non fonctionnelles fréquentes, insulinomes ≈ 10 % — 1re cause de mortalité du syndrome"],
+["Adénomes hypophysaires",["Hypophyse"],"≈ 30–40 %",35,"prolactinomes ++, plus agressifs que les sporadiques"],
+["TNE thymiques et bronchiques",["Thymus","Poumon / plèvre"],"≈ 3–8 %",5,"thymiques : hommes fumeurs, agressives"],
+["Lésions corticosurrénaliennes",["Surrénale (cortex)"],"≈ 20–40 % (le plus souvent bénignes)",30,""],
+["Cutané : angiofibromes, collagénomes, lipomes",["Peau"],"fréquents (aide au diagnostic)",null,""]],
+va:[],
+cr:["≥ 2 atteintes principales (parathyroïdes, pancréas endocrine, hypophyse) ; ou 1 atteinte + apparenté 1er degré MEN1 ; hyperparathyroïdie multiglandulaire < 30 ans ; gastrinome ou TNE pancréatiques multiples à tout âge"],
+su:["Dès l'enfance (≈ 5–8 ans) : calcémie + PTH annuelles ; glycémie/insuline à jeun (insulinome) dès 5 ans ; gastrine dès 20 ans","IRM hypophysaire /3–5 ans (+ prolactine, IGF-1 annuelles) ; IRM/écho-endoscopie pancréatique annuelle à /2 ans ; TDM/IRM thoracique /1–2 ans"],
+tt:["Parathyroïdectomie subtotale (3,5 glandes) ± thymectomie prophylactique par la même voie","Gastrinome : IPP forte dose ; TNE pancréatiques : chirurgie généralement si > 2 cm ; analogues de la somatostatine, évérolimus/sunitinib aux stades avancés"],
+src:["Thakker, JCEM 2012 (guidelines MEN1)","GeneReviews : MEN1"]},
+
+{id:"men2",nom:"Néoplasie endocrinienne multiple de type 2 (RET)",al:["NEM2","MEN2A","MEN2B","syndrome de Sipple","CMT familial"],cat:"endo",pre:"≈ 1/35 000 (MEN2A 95 %)",tr:"AD (MEN2B : 75 % de novo)",
+genes:[["RET","proto-oncogène (gain de fonction) — corrélation génotype-phénotype forte, guide l'âge de la thyroïdectomie"]],
+sp:[["Carcinome médullaire de la thyroïde (CMT)",["Thyroïde"],"≈ 95–100 %",98,"précédé d'une hyperplasie à cellules C ; calcitonine = marqueur ; MEN2B : dès la 1re année de vie"],
+["Phéochromocytome",["Phéochromocytome / paragangliome"],"≈ 50 % (codon 634 et M918T)",50,"souvent bilatéral, rarement malin ; à dépister AVANT toute chirurgie/grossesse"],
+["Hyperparathyroïdie (MEN2A)",["Parathyroïdes"],"≈ 10–25 % (codon 634)",18,"généralement modérée"],
+["MEN2B : ganglioneuromatose digestive et muqueuse",["Intestin grêle / duodénum"],"quasi constante",null,"+ morphotype marfanoïde, névromes muqueux (lèvres, langue), larmes absentes"]],
+va:[["RET p.Met918Thr","MEN2B (> 95 % des cas) — risque ATA « highest »"],["RET codon 634 (p.Cys634Arg/Tyr/…)","MEN2A classique — risque ATA « high »"],["RET exon 10 (codons 609–620)","MEN2A ± maladie de Hirschsprung"]],
+cr:["TOUT carcinome médullaire de la thyroïde → recherche RET germinale (≈ 25 % héréditaires)","Phéochromocytome bilatéral/précoce, lichen amyloïde interscapulaire, Hirschsprung familial : y penser"],
+su:["Calcitonine + échographie thyroïdienne dès le plus jeune âge tant que la thyroïde est en place","Métanéphrines plasmatiques/urinaires annuelles dès 11 ans (risque « highest/high ») ou 16 ans (modéré) ; calcémie-PTH annuelles (MEN2A)"],
+tt:["Thyroïdectomie prophylactique (ATA 2015) : p.Met918Thr → avant 6 mois ; codon 634 / p.Ala883Phe → avant 5 ans (guidée par la calcitonine) ; risque modéré → dès élévation de la calcitonine ou selon préférence familiale","CMT avancé RET-muté : selpercatinib, pralsétinib (inhibiteurs sélectifs de RET) ; vandétanib, cabozantinib","Phéochromocytome : surrénalectomie (préparation alpha-bloquante), épargne corticale si bilatéral"],
+src:["Wells, Thyroid 2015 (ATA MEN2)","GeneReviews : MEN2"]},
+
+{id:"men4",nom:"MEN4 (CDKN1B)",al:["NEM4","MENX"],cat:"endo",pre:"très rare",tr:"AD",
+genes:[["CDKN1B","p27, inhibiteur de kinases cycline-dépendantes"]],
+sp:[["Hyperparathyroïdie primaire",["Parathyroïdes"],"la plus fréquente",null,"phénotype MEN1-like atténué et plus tardif"],
+["Adénomes hypophysaires",["Hypophyse"],"fréquents",null,""],
+["TNE (pancréas, autres)",["Pancréas"],"décrites",null,""]],
+va:[],
+cr:["Phénotype MEN1 avec gène MEN1 négatif → séquencer CDKN1B"],
+su:["Surveillance calquée sur MEN1, allégée selon le phénotype familial"],
+tt:["Identique aux atteintes MEN1 correspondantes"],
+src:["Alrezk 2017 (revue MEN4)"]},
+
+{id:"cdc73",nom:"Hyperparathyroïdie–tumeur de la mâchoire (CDC73)",al:["HPT-JT","parafibromine"],cat:"endo",pre:"rare",tr:"AD",
+genes:[["CDC73","(HRPT2) parafibromine — perte d'expression en IHC tumorale"]],
+sp:[["Hyperparathyroïdie (adénome kystique, carcinome)",["Parathyroïdes"],"≈ 80–90 % ; carcinome parathyroïdien ≈ 15–20 %",85,"le risque de carcinome parathyroïdien est LA spécificité du syndrome"],
+["Fibromes ossifiants des mâchoires",["ORL / tête et cou"],"≈ 30 %",30,"distincts des tumeurs brunes de l'HPT"],
+["Utérus (polypes, léiomyomes, adénosarcomes)",["Endomètre / utérus"],"fréquents",null,""],
+["Rein (kystes, hamartomes, tumeur de Wilms)",["Rein"],"≈ 10–15 %",12,""]],
+va:[],
+cr:["HPT < 40 ans avec adénome kystique/atypique, carcinome parathyroïdien (tout âge → CDC73), fibrome ossifiant mandibulaire"],
+su:["Calcémie + PTH /6–12 mois dès l'enfance ; panoramique dentaire /5 ans ; échographie rénale et utérine régulières"],
+tt:["Parathyroïdectomie précoce et complète de la glande atteinte (risque carcinomateux) ; chirurgie carcinologique en bloc si carcinome"],
+src:["GeneReviews : CDC73-Related Disorders"]},
+
+{id:"carney",nom:"Complexe de Carney (PRKAR1A)",al:["Carney complex","LAMB","NAME"],cat:"endo",pre:"très rare",tr:"AD",
+genes:[["PRKAR1A","sous-unité régulatrice de la PKA (voie AMPc)"]],
+sp:[["Myxomes cardiaques",["Cœur"],"≈ 30–60 % (récidivants, toutes cavités)",45,"1re cause de mortalité (embolies, obstruction) — écho cardiaque à vie"],
+["PPNAD (dysplasie surrénalienne pigmentée)",["Surrénale (cortex)"],"≈ 25–60 %",40,"Cushing ACTH-indépendant, parfois cyclique"],
+["Lentiginose, myxomes cutanés, nævus bleus",["Peau"],"quasi constants",null,"lèvres, conjonctives, muqueuses"],
+["Tumeurs testiculaires (LCCSCT)",["Testicule"],"≈ 30–50 % des hommes",40,"tumeurs à cellules de Sertoli calcifiantes, souvent bilatérales"],
+["Adénome somatotrope (acromégalie)",["Hypophyse"],"≈ 10 %",10,""],
+["Schwannome mélanotique psammomateux",["Tissus mous / sarcomes"],"≈ 10 % (potentiel malin)",10,""],
+["Thyroïde (nodules, carcinomes)",["Thyroïde"],"nodules fréquents, carcinome ≈ 3–5 %",null,""]],
+va:[],
+cr:["≥ 2 manifestations majeures (lentiginose typique, myxome, PPNAD, LCCSCT, acromégalie…) ou 1 manifestation + apparenté atteint/variant familial"],
+su:["Échocardiographie annuelle (semestrielle chez l'enfant) À VIE ; cortisol libre urinaire annuel ; IGF-1/prolactine annuelles ; échographie testiculaire annuelle ; échographie thyroïdienne"],
+tt:["Exérèse des myxomes (récidives → surveillance rapprochée) ; surrénalectomie bilatérale si Cushing PPNAD"],
+src:["GeneReviews : Carney Complex","Stratakis 2001"]},
+
+{id:"pgl",nom:"Phéochromocytomes / paragangliomes héréditaires (SDHx…)",al:["PGL","PPGL","SDHB","SDHD","paragangliome familial","Carney-Stratakis"],cat:"endo",pre:"≈ 30–40 % des phéo/PGL sont héréditaires",tr:"AD (SDHD/SDHAF2 : empreinte, expression si transmission paternelle)",
+genes:[["SDHB","PGL4 — abdomino-thoraciques, RISQUE MALIN le plus élevé"],["SDHD","PGL1 — tête et cou, multifocaux, empreinte paternelle"],["SDHC","PGL3 — tête et cou, plus rare"],["SDHA","pénétrance faible (≈ 10 %) ; GIST SDH-déficients"],["SDHAF2","PGL2 — très rare, tête et cou"],["TMEM127","phéochromocytomes bilatéraux de l'adulte"],["MAX","phéochromocytomes bilatéraux, parfois PGL"]],
+sp:[["Paragangliomes abdomino-thoraciques — SDHB",["Phéochromocytome / paragangliome"],"pénétrance ≈ 25–50 % à 60 ans ; malignité ≈ 30–50 %",40,"tout PGL métastatique doit faire évoquer SDHB"],
+["Paragangliomes tête et cou — SDHD/SDHC",["Phéochromocytome / paragangliome","ORL / tête et cou"],"pénétrance élevée si transmission paternelle (SDHD ≈ 80–90 %)",85,"glomus carotidien, jugulo-tympanique ; souvent non sécrétants, multifocaux"],
+["Phéochromocytome — TMEM127/MAX/SDHB",["Phéochromocytome / paragangliome"],"variable selon le gène",null,"bilatéralité fréquente (TMEM127, MAX)"],
+["GIST SDH-déficients",["Estomac"],"rares (SDHA ++, dyade de Carney-Stratakis)",null,"gastriques, multifocaux, sujets jeunes, IHC SDHB négative"],
+["Carcinome rénal — SDHB",["Rein"],"≈ 5 %",5,""]],
+va:[["SDHD p.Asp92Tyr","fondateur néerlandais"]],
+cr:["TOUT phéochromocytome ou paragangliome justifie une analyse germinale en panel (VHL, RET, NF1, SDHx, TMEM127, MAX…) quel que soit l'âge","IHC SDHB tumorale négative = argument fort pour une mutation SDHx"],
+su:["Métanéphrines plasmatiques/urinaires annuelles dès 6–10 ans (SDHB) ; IRM corps entier (base du crâne → pelvis) tous les 2–3 ans","Empreinte SDHD : surveiller les porteurs ayant hérité de l'allèle PATERNEL (les transmetteurs maternels restent transmetteurs)"],
+tt:["Chirurgie après préparation alpha-bloquante ; PGL malins : 177Lu-DOTATATE, MIBG thérapeutique, sunitinib ; GIST SDH-déficients : imatinib INEFFICACE → sunitinib/régorafénib","Éviter l'hypoxie chronique prolongée (haute altitude) — facteur de croissance discuté des PGL tête et cou"],
+src:["Lenders, JCEM 2014 (Endocrine Society)","GeneReviews : Hereditary PGL-PCC","NGS in PPGL consensus 2017"]},
+{id:"vhl",nom:"Maladie de von Hippel-Lindau (VHL)",al:["VHL","von Hippel Lindau"],cat:"uro",pre:"≈ 1/36 000",tr:"AD (≈ 20 % de novo)",
+genes:[["VHL","dégradation de HIF ; type 1 (tronquants/délétions : pas de phéo) vs type 2 (faux-sens : phéo ; 2A phéo sans CCR, 2B phéo + CCR, 2C phéo isolé)"]],
+sp:[["Hémangioblastomes du SNC",["Cerveau / SNC"],"≈ 60–80 %",70,"cervelet, tronc, moelle ; multiples, d'évolution saltatoire"],
+["Hémangioblastomes rétiniens",["Œil"],"≈ 60 %",60,"dès l'enfance ; risque de cécité si non traités"],
+["Carcinome rénal à cellules claires",["Rein"],"≈ 25–60 % (70 % à 60 ans, type 1)",45,"multifocal, bilatéral, sur kystes ; 1re cause de mortalité"],
+["Kystes et TNE pancréatiques",["Pancréas"],"kystes 50–70 % ; TNE ≈ 9–17 %",15,"TNE : chirurgie si > 3 cm (2 cm à la tête)"],
+["Phéochromocytome (type 2)",["Phéochromocytome / paragangliome"],"≈ 10–25 %",18,"souvent bilatéral, noradrénergique, sujet jeune"],
+["Tumeur du sac endolymphatique",["ORL / tête et cou"],"≈ 10–16 %",12,"surdité, acouphènes, vertiges — IRM ciblée si symptômes"],
+["Cystadénomes de l'épididyme / ligament large",["Testicule"],"fréquents, bénins",null,""]],
+va:[["VHL p.Tyr98His (« Forêt-Noire »)","fondateur, phénotype 2A (phéo prédominant)"]],
+cr:["Hémangioblastome + autre lésion du spectre ; ou hémangioblastome/CCR/phéo + apparenté atteint ; hémangioblastome rétinien ou du SNC isolé du sujet jeune → test","Tout phéochromocytome (panel incluant VHL)"],
+su:["Dès 1 an : examen ophtalmologique annuel ; dès 5 ans : métanéphrines annuelles + audiométrie ; dès 10–15 ans : IRM cérébrale et médullaire /2 ans ; dès 15–20 ans : IRM abdominale annuelle (rein, pancréas, surrénales)","Grossesse : surveiller (croissance des hémangioblastomes possible), dépister le phéo avant l'accouchement"],
+tt:["Belzutifan (inhibiteur HIF-2α) : approuvé (FDA 2021) pour CCR, hémangioblastomes du SNC et TNE pancréatiques associés au VHL ne nécessitant pas de chirurgie immédiate","Rein : chirurgie d'épargne néphronique, déclenchée classiquement au seuil de 3 cm de la plus grosse tumeur","Hémangioblastomes symptomatiques : chirurgie ± radiochirurgie ; rétine : laser/cryothérapie"],
+src:["GeneReviews : VHL","Lonser, Lancet 2003","FDA/EMA belzutifan (LITESPARK-004)","VHL Alliance surveillance guidelines"]},
+
+{id:"hlrcc",nom:"Léiomyomatose héréditaire et cancer rénal (FH)",al:["HLRCC","syndrome de Reed"],cat:"uro",pre:"rare (sous-diagnostiqué)",tr:"AD (FH biallélique = acidurie fumarique)",
+genes:[["FH","fumarate hydratase (cycle de Krebs) ; IHC : perte FH, 2SC positif"]],
+sp:[["Carcinome rénal (papillaire type 2 / FH-déficient)",["Rein"],"≈ 15–21 %",18,"AGRESSIF : métastatique possible même < 1 cm — pas de seuil de surveillance passive"],
+["Léiomyomes cutanés",["Peau"],"≈ 75–90 %",80,"papules fermes, douloureuses (froid, pression)"],
+["Léiomyomes utérins précoces",["Endomètre / utérus"],"quasi constants chez la femme",95,"nombreux, symptomatiques, hystérectomie/myomectomie souvent avant 30–40 ans ; rares léiomyosarcomes rapportés"]],
+va:[],
+cr:["Léiomyomes cutanés multiples (confirmer 1 histologiquement) ; fibromes utérins profus et précoces ; CCR papillaire type 2 / FH-déficient à tout âge ; corrélation IHC tumorale (FH−/2SC+)"],
+su:["IRM rénale ANNUELLE dès 8–10 ans (l'échographie ne suffit pas)","Examen cutané et suivi gynécologique annuels"],
+tt:["Toute lésion rénale solide → exérèse chirurgicale large SANS délai (pas de surveillance active, contrairement à Birt-Hogg-Dubé)","CCR FH-déficient avancé : bévacizumab + erlotinib (activité rapportée), essais dédiés"],
+src:["GeneReviews : HLRCC","Menko 2014 (recommandations)","Schmidt & Linehan 2020"]},
+
+{id:"bhd",nom:"Syndrome de Birt-Hogg-Dubé (FLCN)",al:["BHD","Birt Hogg Dube"],cat:"uro",pre:"≈ 1/200 000 (sous-diagnostiqué)",tr:"AD",
+genes:[["FLCN","folliculine (voie mTOR/AMPK)"]],
+sp:[["Tumeurs rénales",["Rein"],"≈ 15–30 %",22,"hybrides oncocytaires-chromophobes, chromophobes ; bilatérales, multifocales, indolentes"],
+["Kystes pulmonaires / pneumothorax",["Poumon / plèvre"],"kystes ≈ 80 % ; pneumothorax ≈ 25–30 %",null,"kystes basaux ; récidives fréquentes"],
+["Fibrofolliculomes",["Peau"],"≈ 85 % après 25 ans",85,"papules blanchâtres du visage/cou/tronc"]],
+va:[["FLCN c.1285dup (hotspot exon 11, tract poly-C)","mutation récurrente la plus fréquente"]],
+cr:["Fibrofolliculomes multiples confirmés ; pneumothorax spontanés récidivants ou familiaux ; tumeurs rénales chromophobes/hybrides bilatérales ou familiales"],
+su:["IRM rénale tous les 3 ans dès 20 ans (annuelle si lésion) ; exérèse d'épargne néphronique au seuil de 3 cm","TDM thoracique initiale ; conseil sur le risque de pneumothorax (plongée, vols : information)"],
+tt:["Chirurgie conservatrice rénale au seuil de 3 cm (tumeurs indolentes — contraste majeur avec HLRCC)","Pleurodèse précoce si pneumothorax récidivant"],
+src:["GeneReviews : BHD","Menko, Lancet Oncol 2009","ERN GENTURIS"]},
+
+{id:"hprc",nom:"Cancer rénal papillaire héréditaire (MET)",al:["HPRC"],cat:"uro",pre:"très rare",tr:"AD (pénétrance élevée, tardive)",
+genes:[["MET","activation constitutive du domaine tyrosine kinase"]],
+sp:[["Carcinome rénal papillaire de type 1",["Rein"],"élevé (pénétrance ≈ 80–90 % à un âge avancé)",85,"bilatéral, multifocal (jusqu'à des dizaines de lésions), évolution lente"]],
+va:[],
+cr:["CCR papillaires type 1 multiples/bilatéraux ou familiaux"],
+su:["IRM/TDM rénale périodique ; chirurgie d'épargne néphronique au seuil de 3 cm"],
+tt:["Formes avancées : inhibiteurs de MET (foretinib, cabozantinib — activité rapportée sur MET germinal)"],
+src:["GeneReviews / Schmidt & Linehan 2020","Choueiri JCO 2013 (foretinib)"]},
+
+{id:"bap1",nom:"Syndrome de prédisposition tumorale BAP1",al:["BAP1-TPDS","mésothéliome familial"],cat:"peau",pre:"rare",tr:"AD",
+genes:[["BAP1","déubiquitinase (BRCA1-associated protein 1)"]],
+sp:[["Mélanome uvéal",["Œil"],"≈ 25–30 %",28,"formes agressives, métastases hépatiques"],
+["Mésothéliome",["Poumon / plèvre"],"≈ 15–20 %",18,"souvent péritonéal, pronostic paradoxalement meilleur que le sporadique ; interaction amiante"],
+["Mélanome cutané",["Peau"],"≈ 10–15 %",13,""],
+["Carcinome rénal",["Rein"],"≈ 10 %",10,"cellules claires, agressifs"],
+["Tumeurs mélanocytaires BAP1-inactivées (« MBAIT »)",["Peau"],"très fréquentes (bénignes, marqueur clinique)",null,"papules cupuliformes rosées, histologie spitzoïde"]],
+va:[],
+cr:["Association mélanome uvéal / mésothéliome / CCR / mélanome cutané chez un individu ou une famille ; MBAIT multiples ; mésothéliome sans exposition franche à l'amiante ou du sujet jeune"],
+su:["Examen ophtalmologique (fond d'œil dilaté) annuel dès 16 ans ; dermatologie annuelle ; IRM abdominale /2 ans (rein) dès 30 ans","Éviction stricte de l'amiante et du soleil"],
+tt:["Pas de thérapie germinale validée ; tumeurs BAP1-mutées : essais (inhibiteurs EZH2, HDAC)"],
+src:["GeneReviews : BAP1-TPDS","Walpole 2018 (registre international)"]},
+
+{id:"melanome",nom:"Mélanome familial (CDKN2A, CDK4, MITF…)",al:["FAMMM","mélanome-pancréas","p16"],cat:"peau",pre:"CDKN2A : ≈ 20–40 % des familles à ≥ 3 mélanomes",tr:"AD",
+genes:[["CDKN2A","p16INK4a/p14ARF ; risque mélanome + pancréas"],["CDK4","codon 24 (p.Arg24Cys/His) — phénocopie CDKN2A, très rare"],["MITF","p.Glu318Lys : risque modéré mélanome + CCR"],["BAP1 / POT1 / TERT (promoteur)","familles rares — voir fiches/panels dédiés"]],
+sp:[["Mélanome cutané",["Peau"],"≈ 30–70 % à 80 ans (selon latitude/phototype)",50,"multiples primitifs, âge précoce ; pénétrance plus faible en zone peu ensoleillée"],
+["Pancréas — CDKN2A",["Pancréas"],"≈ 15–20 %",17,"surtout familles p16-Leiden ; un des risques pancréatiques héréditaires majeurs"]],
+va:[["CDKN2A c.225_243del (p16-Leiden)","fondateur néerlandais — risque pancréatique marqué"],["CDKN2A p.Gly101Trp","fondateur ligure (Italie/France du Sud)"],["MITF p.Glu318Lys","variant de susceptibilité modérée (mélanome, CCR)"]],
+cr:["≥ 3 mélanomes dans une branche familiale (ou 2 + pancréas) ; mélanomes primitifs multiples chez un même individu ; mélanome + cancer du pancréas familial"],
+su:["Dermatoscopie /6 mois + photographie corporelle totale, dès l'adolescence ; photoprotection stricte","Pancréas (CDKN2A) : IRM et/ou écho-endoscopie annuelle dès 40 ans (protocole CAPS)"],
+tt:["Pas de spécificité germinale du traitement du mélanome (immunothérapie/thérapies ciblées selon BRAF somatique)"],
+src:["GeneReviews : Melanoma susceptibility","Vasen 2000 (p16-Leiden pancréas)","CAPS Gut 2020"]},
+
+{id:"gorlin",nom:"Syndrome de Gorlin (PTCH1/SUFU)",al:["naevomatose basocellulaire","Gorlin-Goltz","NBCCS"],cat:"peau",pre:"≈ 1/31 000–1/57 000",tr:"AD (20–30 % de novo)",
+genes:[["PTCH1","récepteur de la voie Sonic Hedgehog"],["SUFU","≈ 5 % des cas — risque de médulloblastome nettement plus élevé, pas de kystes odontogéniques"]],
+sp:[["Carcinomes basocellulaires multiples",["Peau"],"≈ 90 % (phototypes clairs)",90,"dès l'adolescence ; NETTEMENT moins fréquents chez les phototypes foncés (≈ 40 % ou moins) — pertinent en Afrique du Nord"],
+["Kératokystes odontogéniques",["ORL / tête et cou"],"≈ 90 % (PTCH1)",88,"mâchoires, 2e–3e décennie, récidivants"],
+["Médulloblastome (desmoplasique, < 3 ans)",["Cerveau / SNC"],"PTCH1 ≈ 2 % ; SUFU ≈ 10–30 %",5,"toujours vérifier le gène en cause"],
+["Fibromes ovariens / cardiaques",["Ovaire","Cœur"],"ovariens ≈ 15–25 % ; cardiaques ≈ 2 %",20,"bénins, souvent calcifiés, bilatéraux"]],
+va:[],
+cr:["Critères cliniques (2 majeurs, ou 1 majeur + 2 mineurs) : CBC multiples/précoce, kératokystes, pits palmo-plantaires (≥ 3), calcifications de la faux du cerveau, apparenté 1er degré ; mineurs : macrocéphalie, côtes bifides, fibromes ovariens/cardiaques, médulloblastome…"],
+su:["Dermatologie /3–6 mois dès la puberté ; panoramique dentaire annuel dès 8 ans ; échographie cardiaque et ovarienne initiales","SUFU : IRM cérébrale /4–6 mois jusqu'à 3 ans (médulloblastome) ; PTCH1 : IRM discutée, risque bien moindre"],
+tt:["ÉVITER LA RADIOTHÉRAPIE (induction massive de CBC en champ irradié) — y compris pour un médulloblastome si alternative","CBC avancés/multiples : vismodégib ou sonidégib (inhibiteurs de SHH) ; chirurgie/photothérapie dynamique pour les lésions limitées"],
+src:["GeneReviews : NBCCS","Evans 2017 (critères)","Smith 2014 (SUFU médulloblastome)"]},
+
+{id:"xp",nom:"Xeroderma pigmentosum",al:["XP"],cat:"peau",pre:"≈ 1/250 000 en Europe ; nettement plus fréquent au Maghreb et au Japon (consanguinité, effets fondateurs)",tr:"AR",
+genes:[["XPC","groupe C — le plus fréquent au Maghreb ; pas d'atteinte neurologique en règle"],["XPA","forme sévère avec atteinte neurologique"],["ERCC2 (XPD)","+ formes trichothiodystrophie/Cockayne"],["POLH (XP-V)","forme variante (TLS), photosensibilité modérée"]],
+sp:[["Carcinomes cutanés (CBC, épidermoïdes)",["Peau"],"risque ×10 000 ; premier cancer < 10 ans (médiane ≈ 8–9 ans)",95,"zones photo-exposées ; kératoses précoces"],
+["Mélanome",["Peau"],"risque ×2 000",60,"souvent plus tardif que les carcinomes"],
+["Tumeurs oculaires et de la langue",["Œil","ORL / tête et cou"],"fréquentes (surfaces photo-exposées)",null,"kératites, ptérygions, carcinomes conjonctivaux"],
+["Tumeurs internes (SNC, poumon…)",["Cerveau / SNC","Poumon / plèvre"],"modérément accrues (×10–50)",null,"gliomes ; tabac fortement délétère"]],
+va:[["XPC c.1643_1644del (p.Val548Alafs*25)","FONDATEUR MAGHRÉBIN majeur (Maroc, Algérie, Tunisie) — dépistage ciblé possible"],["XPA c.682C>T (p.Arg228*)","récurrent (Japon : IVS3 fondateur distinct)"]],
+cr:["Photosensibilité extrême (brûlures disproportionnées) OU lentigines profuses avant 2 ans sur zones exposées ; cancer cutané de l'enfant ; consanguinité fréquente ; confirmation moléculaire (panel NER)"],
+su:["Dermatologie /3 mois ; examen ophtalmologique et ORL réguliers ; examen neurologique (formes XPA/XPD)","Conseil génétique familial ; diagnostic prénatal possible"],
+tt:["Photoprotection ABSOLUE (éviction UV totale, films anti-UV, vêtements, dosage vitamine D) — mesure qui change le pronostic","Exérèses itératives précoces ; rétinoïdes oraux en chimioprévention chez les formes profuses ; 5-FU/imiquimod topiques ; ÉVITER radiothérapie et agents génotoxiques si possible"],
+src:["GeneReviews : Xeroderma Pigmentosum","Soufir 2010 / Ben Rekaya 2009 (fondateur XPC maghrébin)","Bradford 2011 (cohorte NIH)"]},
+
+{id:"nf1",nom:"Neurofibromatose de type 1 (NF1)",al:["NF1","maladie de von Recklinghausen"],cat:"neuro",pre:"≈ 1/2 500–1/3 000",tr:"AD (≈ 50 % de novo)",
+genes:[["NF1","neurofibromine (GAP de RAS) ; microdélétion 17q11.2 : phénotype sévère, risque MPNST accru"]],
+sp:[["Tumeurs malignes des gaines nerveuses (MPNST)",["Tissus mous / sarcomes"],"≈ 8–13 % vie entière",10,"sur neurofibrome plexiforme ; douleur, croissance rapide, déficit → IRM + TEP-FDG en urgence"],
+["Gliome des voies optiques",["Cerveau / SNC","Œil"],"≈ 15–20 % (souvent indolent)",17,"enfant < 7 ans ; traiter seulement si menace visuelle"],
+["Sein (femme < 50 ans)",["Sein"],"RR ×4–5 avant 50 ans (risque vie ≈ 20–30 %)",25,"IRM mammaire annuelle dès 30 ans"],
+["Phéochromocytome",["Phéochromocytome / paragangliome"],"≈ 1–5 %",3,"dépister avant chirurgie/grossesse si HTA"],
+["GIST",["Estomac","Intestin grêle / duodénum"],"≈ 5–7 % (souvent multiples, grêle)",6,"KIT/PDGFRA sauvages → imatinib peu efficace"],
+["Leucémie myélomonocytaire juvénile (JMML)",["Sang / moelle"],"rare (enfant, risque ×200–500)",null,"+ xanthogranulomes juvéniles"],
+["Tumeurs glomiques digitales",["Peau"],"fréquentes chez l'adulte (douleurs unguéales)",null,""]],
+va:[],
+cr:["Critères révisés 2021 (2 requis) : ≥ 6 taches café-au-lait ; lentigines axillaires/inguinales ; ≥ 2 neurofibromes ou 1 plexiforme ; gliome optique ; ≥ 2 nodules de Lisch (ou 2 anomalies choroïdiennes) ; lésion osseuse caractéristique ; variant NF1 pathogène ; parent atteint"],
+su:["Examen clinique + ophtalmologique annuel (enfance) ; TA annuelle ; IRM mammaire annuelle dès 30 ans (femmes) ; IRM corps entier à la transition adulte pour cartographier les plexiformes (option) ; vigilance MPNST à vie","Métanéphrines avant chirurgie ou grossesse, ou si HTA"],
+tt:["Neurofibromes plexiformes inopérables symptomatiques : sélumétinib (enfant, FDA 2020) ; mirdamétinib (approbation FDA 2025, enfant et adulte) — inhibiteurs de MEK","MPNST : chirurgie R0 (chimio/RT : bénéfice limité) ; GIST NF1 : chirurgie (imatinib inefficace — KIT sauvage)"],
+src:["Legius & Messiaen 2021 (critères révisés)","GeneReviews : NF1","Uusitalo 2016 (risque sein)","FDA sélumétinib/mirdamétinib"]},
+
+{id:"nf2",nom:"NF2 — schwannomatose liée à NF2",al:["NF2","neurofibromatose type 2","schwannomes vestibulaires bilatéraux"],cat:"neuro",pre:"≈ 1/33 000",tr:"AD (50 % de novo ; mosaïcisme fréquent ≈ 30 %)",
+genes:[["NF2","merline/schwannomine ; tronquants = phénotype sévère, faux-sens = modéré"]],
+sp:[["Schwannomes vestibulaires bilatéraux",["Cerveau / SNC","ORL / tête et cou"],"≈ 90–95 %",93,"surdité progressive 20–30 ans ; bénins mais délabrants"],
+["Méningiomes (souvent multiples)",["Cerveau / SNC"],"≈ 50–60 %",55,"y compris méningiome de l'enfant = signe d'appel"],
+["Épendymomes / schwannomes médullaires",["Cerveau / SNC"],"≈ 20–50 % (souvent asymptomatiques)",35,""],
+["Schwannomes cutanés / cataracte juvénile",["Peau","Œil"],"fréquents",null,"cataracte sous-capsulaire postérieure juvénile"]],
+va:[],
+cr:["Schwannomes vestibulaires bilatéraux ; ou apparenté NF2 + 1 schwannome vestibulaire unilatéral ou 2 lésions parmi méningiome, schwannome, épendymome, cataracte juvénile ; méningiome/schwannome de l'enfant → y penser (critères Manchester révisés)"],
+su:["IRM cérébrale (+ conduits auditifs internes) annuelle dès 10–12 ans ; IRM médullaire /2–3 ans ; audiométrie annuelle ; examen ophtalmologique"],
+tt:["Bévacizumab : réduction tumorale et amélioration auditive dans les schwannomes vestibulaires évolutifs","Chirurgie/radiochirurgie au cas par cas (préservation auditive) ; implants auditifs du tronc cérébral"],
+src:["GeneReviews : NF2","Plotkin 2009/2019 (bévacizumab)","Evans, critères Manchester"]},
+
+{id:"schwannomatose",nom:"Schwannomatoses (SMARCB1/LZTR1)",al:["schwannomatosis"],cat:"neuro",pre:"≈ 1/70 000",tr:"AD (pénétrance incomplète)",
+genes:[["SMARCB1","schwannomatose 1 ; aussi méningiomes ; ne pas confondre avec son rôle dans les tumeurs rhabdoïdes (variants distincts)"],["LZTR1","schwannomatose 2 ; schwannome vestibulaire UNIlatéral possible (piège avec NF2)"]],
+sp:[["Schwannomes multiples non vestibulaires",["Tissus mous / sarcomes","Cerveau / SNC"],"quasi constants (douleur chronique au premier plan)",90,"rachidiens, périphériques ; la douleur domine le tableau"],
+["Méningiomes — SMARCB1",["Cerveau / SNC"],"≈ 5 %",5,""]],
+va:[],
+cr:["≥ 2 schwannomes non intradermiques (1 confirmé histologiquement) SANS schwannome vestibulaire bilatéral à l'IRM ; génétique tumeur + sang (4-hit SMARCB1)"],
+su:["IRM cérébrale + médullaire de référence puis selon symptômes ; prise en charge de la douleur ++"],
+tt:["Chirurgie des lésions symptomatiques ; douleur neuropathique : approche multidisciplinaire"],
+src:["GeneReviews : Schwannomatosis","Plotkin 2022 (nouvelle nomenclature)"]},
+
+{id:"tsc",nom:"Sclérose tubéreuse de Bourneville (TSC1/TSC2)",al:["STB","tuberous sclerosis","TSC"],cat:"neuro",pre:"≈ 1/6 000 naissances",tr:"AD (2/3 de novo ; TSC2 plus sévère)",
+genes:[["TSC1","hamartine"],["TSC2","tubérine ; délétions contiguës TSC2-PKD1 : polykystose rénale précoce sévère"]],
+sp:[["Angiomyolipomes rénaux",["Rein"],"≈ 70–80 %",75,"risque hémorragique si > 3–4 cm ou anévrismes"],
+["SEGA (astrocytome sous-épendymaire à cellules géantes)",["Cerveau / SNC"],"≈ 5–15 %",10,"enfant/adolescent, près du foramen de Monro (hydrocéphalie)"],
+["Rhabdomyomes cardiaques",["Cœur"],"≈ 50 % (néonatals, régressent)",null,"souvent détectés en anténatal"],
+["LAM pulmonaire (femmes adultes)",["Poumon / plèvre"],"≈ 30–40 % des femmes (souvent infraclinique)",35,"dyspnée, pneumothorax"],
+["Carcinome rénal",["Rein"],"≈ 2–4 % (âge jeune)",3,""]],
+va:[],
+cr:["Critères cliniques 2021 (2 majeurs ou 1 majeur + 2 mineurs) : angiofibromes faciaux, taches hypomélaniques, tumeurs de Koenen, tubers corticaux, nodules sous-épendymaires, SEGA, rhabdomyome, LAM, angiomyolipomes… ; variant TSC1/2 pathogène = critère suffisant"],
+su:["IRM cérébrale /1–3 ans jusqu'à 25 ans ; IRM abdominale /1–3 ans à vie ; TDM thoracique (femmes dès 18 ans puis /5–10 ans si LAM) ; EEG/développement (TAND)"],
+tt:["Évérolimus : SEGA non opérable et angiomyolipomes ≥ 3 cm évolutifs (EXIST-1/2) ; sirolimus topique pour angiofibromes","Embolisation préventive des angiomyolipomes à risque hémorragique ; épargne néphronique"],
+src:["Northrup 2021 (critères + surveillance)","GeneReviews : TSC","EXIST-1/EXIST-2"]},
+
+{id:"rb1",nom:"Rétinoblastome héréditaire (RB1)",al:["rétinoblastome"],cat:"ped",pre:"≈ 1/15 000–1/20 000 naissances (40 % héréditaires)",tr:"AD (pénétrance ≈ 90 %)",
+genes:[["RB1","1er gène suppresseur décrit (Knudson, « two-hit ») ; formes bilatérales = germinales quasi constantes ; 13q- : syndrome délétionnel"]],
+sp:[["Rétinoblastome",["Œil"],"pénétrance ≈ 90 % ; bilatéral/multifocal, < 2 ans",90,"leucocorie, strabisme = signes d'alerte"],
+["Pinéaloblastome (« rétinoblastome trilatéral »)",["Cerveau / SNC"],"≈ 5 %",5,"pronostic sombre — IRM au moindre signe"],
+["Seconds cancers (ostéosarcome, sarcomes, mélanome)",["Os","Tissus mous / sarcomes","Peau"],"≈ 30–40 % à 50 ans (formes germinales)",35,"risque MAJORÉ par la radiothérapie externe reçue"]],
+va:[],
+cr:["Tout rétinoblastome bilatéral ou multifocal → germinal quasi certain ; unilatéral : ≈ 15 % germinaux → test systématique ; dépistage présymptomatique de la fratrie/descendance (FO sous AG répétés dès la naissance si statut inconnu)"],
+su:["Porteurs : fond d'œil (sous AG) toutes les 3–4 semaines jusqu'à 6 mois puis espacé jusqu'à 5 ans","Après guérison : éducation aux signes de sarcome, éviter irradiations inutiles ; examen dermato ; pas de protocole validé de dépistage des seconds cancers (IRM corps entier discutée)"],
+tt:["ÉVITER la radiothérapie externe (explosion du risque de seconds cancers en territoire irradié) → chimiothérapie intra-artérielle/intravitréenne, thermochimiothérapie, cryothérapie, laser","Énucléation si nécessaire ; chimio systémique selon stade"],
+src:["GeneReviews : Retinoblastoma","Kleinerman 2005 (seconds cancers)","Dimaras, Lancet 2012"]},
+{id:"rtps",nom:"Prédisposition aux tumeurs rhabdoïdes (SMARCB1/SMARCA4)",al:["RTPS","tumeur rhabdoïde","ATRT","SCCOHT"],cat:"ped",pre:"très rare",tr:"AD (souvent de novo ; mosaïcisme parental possible)",
+genes:[["SMARCB1","RTPS1 (INI1) — tumeurs rhabdoïdes du nourrisson"],["SMARCA4","RTPS2 (BRG1) — SCCOHT de la femme jeune"]],
+sp:[["Tumeurs rhabdoïdes (ATRT, rein, tissus mous) — SMARCB1",["Cerveau / SNC","Rein","Tissus mous / sarcomes"],"pénétrance élevée, < 3 ans",80,"≈ 25–35 % des tumeurs rhabdoïdes ont une mutation germinale"],
+["Carcinome à petites cellules de l'ovaire hypercalcémiant (SCCOHT) — SMARCA4",["Ovaire"],"élevé, mal quantifié (femmes < 40 ans)",null,"annexectomie de réduction de risque à discuter chez les porteuses"]],
+va:[],
+cr:["Toute tumeur rhabdoïde (IHC INI1/BRG1 négative) → recherche germinale ; SCCOHT → SMARCA4 germinal (≈ 40–50 % des cas)"],
+su:["SMARCB1 : échographie cérébrale/IRM + écho abdominale rapprochées (/2–3 mois) les 3 premières années (protocoles pédiatriques)","SMARCA4 (femmes) : discuter annexectomie précoce après information (pas de dépistage ovarien fiable)"],
+tt:["Protocoles intensifs pédiatriques (EU-RHAB) ; essais inhibiteurs EZH2 (tazémétostat) dans les tumeurs INI1-négatives"],
+src:["GeneReviews : Rhabdoid Tumor Predisposition","Witkowski 2014 (SCCOHT)","Frühwald 2021"]},
+
+{id:"dicer1",nom:"Syndrome DICER1",al:["pléuropneumoblastome familial","PPB syndrome"],cat:"ped",pre:"≈ 1/10 000 (pénétrance faible)",tr:"AD (mosaïques possibles, plus sévères)",
+genes:[["DICER1","ribonucléase des miARN ; 2e hit typique = faux-sens RNase IIIb (hotspots)"]],
+sp:[["Pléuropneumoblastome (PPB)",["Poumon / plèvre"],"≈ 3–5 % (< 6 ans)",5,"type I kystique → III solide ; TOUT kyste pulmonaire du nourrisson porteur = suspect"],
+["Goitre multinodulaire",["Thyroïde"],"≈ 75 % des femmes à 40 ans",75,"cancer thyroïdien différencié : risque modérément accru (RR ≈ 16, risque absolu faible)"],
+["Tumeur de Sertoli-Leydig de l'ovaire (SLCT)",["Ovaire"],"la tumeur ovarienne la plus caractéristique (risque absolu faible)",null,"souvent 10–25 ans, parfois virilisante"],
+["Néphrome kystique / sarcome anaplasique du rein",["Rein"],"≈ 1 % (< 4 ans)",null,""],
+["Rhabdomyosarcome embryonnaire du col utérin (botryoïde)",["Col utérin"],"rare",null,""],
+["Blastome hypophysaire / pinéoblastome / médulloépithéliome ciliaire",["Hypophyse","Cerveau / SNC","Œil"],"rares mais quasi pathognomoniques",null,""]],
+va:[],
+cr:["PPB, néphrome kystique, SLCT, blastome hypophysaire, médulloépithéliome ciliaire, goitre multinodulaire familial/précoce, rhabdomyosarcome du col → test DICER1"],
+su:["TDM thoracique basse dose vers 3–6 mois puis radio/TDM selon protocole jusqu'à ≈ 8 ans (PPB) ; échographie abdomino-pelvienne /6–12 mois jusqu'à 8–12 ans puis annuelle (rein, ovaire) ; échographie thyroïdienne dès 8 ans puis /2–3 ans"],
+tt:["Chirurgie des tumeurs localisées ; PPB type I de découverte précoce = pronostic bien meilleur (intérêt du dépistage)"],
+src:["Schultz 2018 (recommandations surveillance, Clin Cancer Res)","GeneReviews : DICER1","Stewart 2019 (pénétrance)"]},
+
+{id:"wt1",nom:"Syndromes WT1 (Denys-Drash, WAGR, Frasier)",al:["WT1","Denys-Drash","WAGR","Frasier","néphroblastome"],cat:"ped",pre:"rares",tr:"AD (majoritairement de novo)",
+genes:[["WT1","facteur de transcription du développement rénal et gonadique ; Denys-Drash = faux-sens (dominant-négatif), Frasier = variants d'épissage intron 9, WAGR = délétion 11p13 (WT1+PAX6)"]],
+sp:[["Néphroblastome (tumeur de Wilms) — Denys-Drash",["Rein"],"> 90 %",92,"précoce, souvent bilatéral ; + néphropathie (sclérose mésangiale diffuse) + anomalies du développement sexuel 46,XY"],
+["Néphroblastome — WAGR",["Rein"],"≈ 45–60 %",50,"Wilms + Aniridie + anomalies Génito-urinaires + Retard (délétion 11p13) ; insuffisance rénale tardive fréquente"],
+["Gonadoblastome — Frasier",["Testicule","Ovaire"],"≈ 40–60 % (dysgénésie gonadique 46,XY)",50,"+ néphropathie (HSF) d'évolution lente ; Wilms rare"]],
+va:[],
+cr:["Aniridie sporadique du nourrisson → FISH/CGH 11p13 en urgence (risque Wilms) ; Wilms bilatéral ou + anomalie génito-urinaire/néphropathie → WT1 ; dysgénésie gonadique 46,XY + protéinurie → Frasier"],
+su:["Échographie rénale toutes les 3–4 mois jusqu'à 7 ans (porteurs à risque de Wilms) ; suivi néphrologique (protéinurie, HTA)","Gonadectomie prophylactique des gonades dysgénétiques 46,XY (risque de gonadoblastome)"],
+tt:["Wilms : protocoles SIOP/COG ; chirurgie d'épargne néphronique si bilatéral ; anticiper l'insuffisance rénale (Denys-Drash, WAGR)"],
+src:["GeneReviews : WT1 Disorders","Recommandations AREN/SIOP surveillance"]},
+
+{id:"bws",nom:"Syndrome de Beckwith-Wiedemann (11p15)",al:["BWS","Wiedemann-Beckwith","hémihypertrophie"],cat:"ped",pre:"≈ 1/10 500 naissances",tr:"anomalies d'empreinte 11p15 (le plus souvent sporadiques ; CDKN1C : transmission maternelle)",
+genes:[["IC2 (KCNQ1OT1) perte de méthylation","≈ 50 % — risque tumoral FAIBLE (hépatoblastome surtout)"],["Disomie uniparentale paternelle 11p15 (pUPD)","≈ 20 % — risque intermédiaire (Wilms + hépatoblastome)"],["IC1 (H19) gain de méthylation","≈ 5–10 % — risque de Wilms LE PLUS ÉLEVÉ (≈ 20–28 %)"],["CDKN1C","≈ 5 % (formes familiales) — neuroblastome décrit"]],
+sp:[["Néphroblastome (Wilms)",["Rein"],"global ≈ 5–8 % ; IC1 ≈ 20–28 % ; pUPD ≈ 7–8 % ; IC2 < 1 %",8,"stratification PAR ÉPIGÉNOTYPE = clé de la surveillance"],
+["Hépatoblastome",["Foie / voies biliaires"],"≈ 1–2 % (pUPD, IC2)",2,"< 4 ans ; AFP = marqueur"],
+["Neuroblastome, corticosurrénalome, autres embryonnaires",["Surrénale (cortex)"],"rares",null,"CDKN1C : neuroblastome"]],
+va:[],
+cr:["Score clinique (consensus 2018) : macroglossie, omphalocèle, macrosomie, hémihyperplasie latéralisée, hyperinsulinisme néonatal, viscéromégalie… ; hémihyperplasie isolée = spectre BWS → même surveillance","Diagnostic : méthylation 11p15 (MS-MLPA) sur sang ± tissu (mosaïcisme fréquent — un test sanguin normal n'exclut pas)"],
+su:["Échographie abdominale complète + AFP toutes les 3 mois jusqu'à 4 ans, puis échographie rénale toutes les 3 mois jusqu'à 7 ans (consensus américain ; le consensus européen 2018 allège pour IC2 isolé)","Prise en charge de l'hypoglycémie néonatale et de la macroglossie"],
+tt:["Tumeurs : protocoles pédiatriques standards ; bon pronostic global des Wilms dépistés"],
+src:["Brioude 2018 (consensus international)","Maas 2016 (risques par épigénotype)","GeneReviews : BWS"]},
+
+{id:"neuroblastome",nom:"Neuroblastome familial (ALK/PHOX2B)",al:["neuroblastome héréditaire"],cat:"ped",pre:"≈ 1–2 % des neuroblastomes",tr:"AD (pénétrance incomplète ≈ 50 %)",
+genes:[["ALK","gain de fonction du domaine kinase — cause principale du neuroblastome familial"],["PHOX2B","neurocristopathie : + syndrome d'Ondine (hypoventilation centrale) et Hirschsprung"]],
+sp:[["Neuroblastome / ganglioneuroblastome",["Surrénale (cortex)","Phéochromocytome / paragangliome"],"pénétrance ≈ 50 % (formes multifocales, précoces)",50,"médullosurrénale et chaînes sympathiques"]],
+va:[["ALK p.Arg1275Gln","variant germinal activateur le plus fréquent"],["PHOX2B expansions polyalanine / tronquants","tronquants non-polyalanine = risque tumoral plus élevé"]],
+cr:["Neuroblastome familial, bilatéral ou multifocal ; neuroblastome + Hirschsprung ou hypoventilation centrale → PHOX2B"],
+su:["Porteurs : échographie abdominale + catécholamines urinaires (VMA/HVA) tous les 3 mois jusqu'à 2 ans puis /6 mois jusqu'à ≈ 6 ans, radio de thorax périodique (protocoles familiaux)"],
+tt:["Formes ALK-mutées avancées : inhibiteurs d'ALK (lorlatinib intégré aux protocoles de haut risque) en complément du traitement standard"],
+src:["Mossé 2008 (ALK familial)","GeneReviews : ALK/PHOX2B-Related Neuroblastoma","COG/SIOPEN"]},
+
+{id:"fanconi",nom:"Anémie de Fanconi",al:["Fanconi","FA"],cat:"rep",pre:"≈ 1/130 000 (porteurs 1/180 ; plus fréquent : ashkénazes, Afrique du Sud, Espagne — effets fondateurs)",tr:"AR (FANCB : lié à l'X ; RAD51 : AD de novo)",
+genes:[["FANCA","≈ 60–65 % des cas"],["FANCC",""],["FANCG",""],["FANCD1 (BRCA2)","biallélique — phénotype tumoral MAJEUR précoce"],["FANCN (PALB2)","idem D1"],["FANCD2 / autres (23 gènes)",""]],
+sp:[["Insuffisance médullaire",["Sang / moelle"],"≈ 80–90 % à 40 ans",85,"cytopénies dès 5–10 ans ; macrocytose, HbF élevée"],
+["SMD / LAM",["Sang / moelle"],"≈ 10–30 % (risque ×500–800)",20,"pic adolescent/adulte jeune ; clones 3q+, 7-"],
+["Carcinomes épidermoïdes (tête-cou, œsophage, anogénital)",["ORL / tête et cou","Estomac"],"risque ×200–700, dès 20–30 ans (++ après greffe)",30,"HPV-associés en partie ; dépistage ORL rapproché"],
+["FANCD1/N : médulloblastome, Wilms, LAM du petit enfant",["Cerveau / SNC","Rein","Sang / moelle"],"très élevé avant 6 ans (BRCA2/PALB2 bialléliques)",90,"phénotype tumoral distinct et redoutable"]],
+va:[["FANCC c.456+4A>T (IVS4)","fondateur ashkénaze"],["FANCA délétions exoniques récurrentes","fréquentes (MLPA nécessaire)"]],
+cr:["Diagnostic : test de cassures chromosomiques à la mitomycine C / DEB sur lymphocytes (ton domaine cyto) — à demander devant : cytopénie inexpliquée de l'enfant, malformations radiales/rénales, taches café-au-lait, petite taille, carcinome épidermoïde du sujet jeune, LAM/SMD précoce, hypersensibilité majeure à la chimio","Attention aux faux négatifs par mosaïcisme somatique réverse (→ test sur fibroblastes)"],
+su:["NFS + myélogramme/cytogénétique médullaire annuels ; examen ORL + dermato tous les 6 mois dès 10–15 ans (à vie, surtout post-greffe) ; gynéco annuel (HPV, vaccination ++)"],
+tt:["HYPERSENSIBILITÉ aux agents pontants (cisplatine, mitomycine) et à la radiothérapie → conditionnements de greffe ATTÉNUÉS (fludarabine, faibles doses), chimio adaptée","Allogreffe = traitement curatif de l'atteinte médullaire ; androgènes en attente ; exclure la maladie chez tout donneur intrafamilial"],
+src:["GeneReviews : Fanconi Anemia","Kutler 2003 (registre IFAR)","Recommandations FA Research Fund"]},
+
+{id:"at",nom:"Ataxie-télangiectasie (ATM biallélique)",al:["AT","Louis-Bar"],cat:"rep",pre:"≈ 1/40 000–1/100 000",tr:"AR",
+genes:[["ATM","biallélique ; hétérozygotes : voir fiche « Prédisposition ATM »"]],
+sp:[["Lymphomes et leucémies (LAL-T, LPL-T)",["Sang / moelle"],"≈ 10–25 % avant l'âge adulte (risque ×50–200)",20,"translocations 7;14 caractéristiques en cytogénétique"],
+["Tumeurs solides de l'adulte (sein, estomac, foie…)",["Sein","Estomac","Foie / voies biliaires"],"accrues chez les patients atteignant l'âge adulte",null,""]],
+va:[],
+cr:["Ataxie cérébelleuse progressive du jeune enfant + télangiectasies oculo-cutanées + infections ; AFP sérique ÉLEVÉE (marqueur simple) ; radiosensibilité ; déficit immunitaire (IgA/IgG2)"],
+su:["NFS régulière, vigilance adénopathies ; immunologie ; kinésithérapie ; ÉVITER les radiographies non indispensables"],
+tt:["RADIOSENSIBILITÉ MAJEURE : proscrire la radiothérapie conventionnelle et adapter drastiquement la chimiothérapie (bléomycine, alkylants) des hémopathies","Vaccinations (hors vivants selon déficit), substitution Ig si besoin"],
+src:["GeneReviews : Ataxia-Telangiectasia","Suarez 2015 (hémopathies)"]},
+
+{id:"bloom",nom:"Syndrome de Bloom (BLM)",al:["Bloom"],cat:"rep",pre:"très rare (fondateur ashkénaze ≈ 1/100 porteurs)",tr:"AR",
+genes:[["BLM","hélicase RecQ ; échanges de chromatides sœurs (SCE) ×10 = signature cytogénétique diagnostique"]],
+sp:[["Tous cancers confondus",["Sang / moelle","Côlon-rectum","Sein","ORL / tête et cou"],"≈ 50 % à 25–30 ans ; multiples et très précoces",80,"leucémies/lymphomes chez l'enfant puis carcinomes (côlon, sein, ORL) de l'adulte jeune — âge médian du 1er cancer ≈ 26 ans"]],
+va:[["BLM c.2207_2212delinsTAGATTC (blmAsh)","fondateur ashkénaze"]],
+cr:["Petite taille prénatale et postnatale + érythème télangiectasique photosensible du visage + hypofertilité + infections ; confirmation : SCE élevés ou séquençage BLM"],
+su:["Dépistages TRÈS anticipés : coloscopie annuelle dès 10–12 ans, NFS régulière, vigilance multi-organes ; éviter le soleil"],
+tt:["Réduire les doses de chimiothérapie (hypersensibilité aux alkylants) et éviter la radiothérapie quand c'est possible"],
+src:["GeneReviews : Bloom Syndrome","Cunniff 2017 (registre)"]},
+
+{id:"nbs",nom:"Syndrome de Nijmegen (NBN)",al:["NBS","Nijmegen breakage syndrome"],cat:"rep",pre:"rare (fondateur slave)",tr:"AR",
+genes:[["NBN","(nibrine, complexe MRN) ; hétérozygotes : risque modéré de cancer du sein débattu"]],
+sp:[["Lymphomes (surtout B et T agressifs)",["Sang / moelle"],"≈ 40–50 % avant 20 ans",45,"risque parmi les plus élevés de toutes les prédispositions"],
+["Autres (médulloblastome, gliomes, rhabdomyosarcome)",["Cerveau / SNC","Tissus mous / sarcomes"],"accrus",null,""]],
+va:[["NBN c.657_661del5","fondateur slave (Pologne, Tchéquie…) — > 90 % des allèles"]],
+cr:["Microcéphalie progressive + faciès particulier + déficit immunitaire + retard statural, intelligence subnormale puis déclin ; radiosensibilité"],
+su:["Surveillance hématologique rapprochée ; substitution immunologique ; éviter les irradiations"],
+tt:["Adapter chimiothérapie/radiothérapie (radiosensibilité) ; allogreffe discutée dans certains cas"],
+src:["GeneReviews : NBS","Chrzanowska 2012"]},
+
+{id:"werner",nom:"Syndrome de Werner (WRN)",al:["progéria de l'adulte"],cat:"rep",pre:"rare (fondateurs japonais et sarde)",tr:"AR",
+genes:[["WRN","hélicase RecQ"]],
+sp:[["Cancers de la thyroïde (folliculaire ++)",["Thyroïde"],"parmi les plus fréquents du syndrome",null,"spectre inhabituel, non épithélial-dominant"],
+["Mélanomes (acraux et muqueux)",["Peau"],"sur-représentés",null,"localisations atypiques évocatrices"],
+["Sarcomes, ostéosarcome, méningiomes, hémopathies",["Tissus mous / sarcomes","Os","Cerveau / SNC","Sang / moelle"],"accrus (risque global ×2–10 ; tumeurs multiples 20 %)",null,""]],
+va:[],
+cr:["Vieillissement prématuré débutant APRÈS la puberté : cataracte bilatérale précoce, peau sclérodermiforme, ulcères de jambe, diabète, athérome précoce, petite taille, voix aiguë"],
+su:["Dermato + thyroïde régulières ; bilan métabolique/cardiovasculaire annuel ; vigilance sarcome"],
+tt:["Prise en charge métabolique et vasculaire ; chirurgie prudente (cicatrisation médiocre)"],
+src:["GeneReviews : Werner Syndrome","Lauper 2013 (spectre tumoral)"]},
+
+{id:"rts",nom:"Syndrome de Rothmund-Thomson (RECQL4)",al:["RTS","poïkilodermie congénitale"],cat:"rep",pre:"très rare",tr:"AR",
+genes:[["RECQL4","hélicase RecQ (type 2 = risque ostéosarcome ; type 1 ANAPC1 : cataracte, pas d'excès tumoral net)"]],
+sp:[["Ostéosarcome",["Os"],"≈ 30 % (type 2, souvent < 15 ans, parfois multifocal)",30,"radiographies au moindre point d'appel osseux"],
+["Carcinomes cutanés",["Peau"],"accrus (adulte)",null,""],
+["Lymphomes",["Sang / moelle"],"décrits",null,""]],
+va:[],
+cr:["Poïkilodermie du visage débutant vers 3–6 mois puis extensive + petite taille, anomalies squelettiques (radius), cataracte, cheveux clairsemés"],
+su:["Vigilance clinique osseuse (douleur/boiterie → imagerie sans délai) ; dermatologie annuelle ; photoprotection"],
+tt:["Ostéosarcome : protocoles standards en surveillant la toxicité (sensibilité accrue possible)"],
+src:["GeneReviews : Rothmund-Thomson","Wang 2003 (risque ostéosarcome)"]},
+
+{id:"telomere",nom:"Téloméropathies / dyskératose congénitale",al:["dyskératose congénitale","TBD","telomere biology disorders"],cat:"hemato",pre:"rares",tr:"variable (DKC1 : lié à l'X ; TERT/TERC : AD à anticipation ; RTEL1/PARN : AR/AD)",
+genes:[["DKC1","dyskérine (lié à l'X)"],["TERT / TERC","formes AD de l'adulte : aplasie, fibrose pulmonaire, cirrhose — anticipation génétique"],["TINF2","formes pédiatriques sévères (Revesz)"],["RTEL1 / PARN / NOP10 / NHP2 / WRAP53","autres composantes télomériques"]],
+sp:[["SMD / LAM",["Sang / moelle"],"≈ 10–30 % cumulés (sur insuffisance médullaire)",20,""],
+["Carcinomes épidermoïdes (tête-cou, anogénitaux)",["ORL / tête et cou"],"risque ×50–1000, adulte jeune",null,""],
+["Aplasie médullaire (non maligne mais centrale)",["Sang / moelle"],"fréquente et révélatrice",null,"+ fibrose pulmonaire, cirrhose — penser « maladie des télomères » devant cette triade familiale"]],
+va:[],
+cr:["Triade muco-cutanée classique (dystrophie unguéale, leucoplasie orale, pigmentation réticulée) souvent incomplète dans les formes adultes ; télomères très courts en flow-FISH (< 1er percentile) = clé diagnostique ; aplasie « idiopathique » + fibrose pulmonaire familiale → tester"],
+su:["NFS + moelle périodiques ; ORL/dermato semestriels ; EFR annuelles ; bilan hépatique ; conseil : anticipation (formes AD)"],
+tt:["Allogreffe à conditionnement ATTÉNUÉ sans irradiation ni busulfan fort (toxicité pulmonaire/hépatique majeure) ; androgènes (danazol) : amélioration hématologique ; EXCLURE les apparentés porteurs comme donneurs","Éviter tabac/alcool (carcinomes), toxiques pulmonaires et hépatiques"],
+src:["GeneReviews : Dyskeratosis Congenita / TBD","Alter 2009 (cancer)","Townsley 2016 (danazol)"]},
+
+{id:"leucemies",nom:"Prédispositions familiales aux LAM/SMD et cytopénies",al:["RUNX1","DDX41","GATA2","CEBPA","leucémie familiale","MonoMAC","ANKRD26","ETV6"],cat:"hemato",pre:"≈ 5–10 % des LAM (DDX41 : la plus fréquente chez l'adulte)",tr:"AD",
+genes:[["CEBPA","LAM à pénétrance très élevée (souvent < 30 ans), pronostic relativement favorable mais « rechutes » = nouvelles leucémies"],["RUNX1","thrombopénie familiale avec plaquettes dysfonctionnelles → SMD/LAM ≈ 35–45 %"],["DDX41","SMD/LAM TARDIVES (> 60 ans, H > F) — y penser même sans histoire familiale ; 2e hit somatique fréquent p.Arg525His"],["GATA2","MonoMAC : monocytopénie, infections à mycobactéries atypiques/HPV, lymphœdème → SMD/LAM ≈ 75 % à 40 ans"],["ANKRD26","thrombopénie 2 ; LAM ≈ 5–10 %"],["ETV6","thrombopénie 5 ; LAL surtout"],["SAMD9/SAMD9L","monosomie 7 pédiatrique, syndromes MIRAGE/ataxie-pancytopénie"]],
+sp:[["LAM / SMD",["Sang / moelle"],"CEBPA > 80 % ; GATA2 ≈ 75 % ; RUNX1 35–45 % ; DDX41 ≈ 30–50 % (tardif) ; ANKRD26 ≈ 5–10 %",60,"selon le gène — voir détail"],
+["LAL — ETV6, PAX5, IKZF1",["Sang / moelle"],"accru",null,""]],
+va:[["DDX41 p.Asp140Glyfs* et p.Met1? (start-loss)","germinaux récurrents ; hit somatique p.Arg525His"],["GATA2 : variants nuls et faux-sens ZF2","+ délétions — MLPA utile"]],
+cr:["Tester si : LAM/SMD + thrombopénie personnelle/familiale ancienne, ≥ 2 hémopathies myéloïdes familiales, LAM CEBPA double-mutée (vérifier le caractère germinal !), monosomie 7 du sujet jeune, infections MonoMAC, LAM du sujet âgé avec variant DDX41 à VAF ≈ 50 %","Séquencer sur tissu NON hématopoïétique (fibroblastes cutanés) pour confirmer le caractère germinal"],
+su:["NFS /6–12 mois + myélogramme avec cytogénétique si anomalie ; GATA2 : discussion de greffe PRÉEMPTIVE avant transformation ; suivi immuno-infectieux (GATA2)"],
+tt:["RÈGLE D'OR : exclure le variant familial chez tout donneur apparenté avant allogreffe (échec de greffe, LAM du donneur)","GATA2/RUNX1 : allogreffe précoce à discuter ; DDX41 : sensibilité rapportée au lénalidomide/azacitidine (données émergentes)"],
+src:["Recommandations ELN 2022 (prédispositions germinales)","GeneReviews : GATA2, RUNX1, DDX41-related","Polprasert 2015 (DDX41)"]},
+{id:"hoxb13",nom:"Prostate héréditaire (HOXB13)",al:["G84E","cancer de la prostate familial"],cat:"uro",pre:"p.Gly84Glu : ≈ 0,3–0,5 % (Europe du Nord)",tr:"AD (pénétrance incomplète)",
+genes:[["HOXB13","facteur de transcription du développement prostatique"],["BRCA2 / ATM / CHEK2 / MMR","autres gènes du panel prostate — voir fiches dédiées"]],
+sp:[["Prostate",["Prostate"],"RR ×3–8 ; risque vie ≈ 30–60 % selon l'histoire familiale",45,"formes plus précoces ; agressivité non clairement majorée (contrairement à BRCA2)"]],
+va:[["HOXB13 p.Gly84Glu","variant fondateur nord-européen (quasi exclusif)"]],
+cr:["≥ 3 cancers de la prostate familiaux ou 2 précoces (< 55 ans) → panel prostate (HOXB13, BRCA2, ATM, CHEK2, MMR)","Prostate métastatique : panel systématique (indication théranostique BRCA)"],
+su:["PSA annuel dès 40–45 ans (comme BRCA2)"],
+tt:["Pas de thérapie ciblée propre (contrairement à BRCA2/PARPi)"],
+src:["Ewing NEJM 2012","Nyberg 2019 (pénétrance)","NCCN Prostate"]},
+
+{id:"gist",nom:"GIST familiaux (KIT/PDGFRA)",al:["GIST héréditaire","tumeurs stromales familiales"],cat:"dig",pre:"exceptionnel (< 50 familles décrites)",tr:"AD",
+genes:[["KIT","gain de fonction germinal — GIST multiples + hyperpigmentation + mastocytose/urticaire pigmentaire + dysphagie (hyperplasie des cellules de Cajal)"],["PDGFRA","GIST + lipomes/fibromes inflammatoires ; p.Asp842Val = résistance à l'imatinib"]],
+sp:[["GIST multiples (estomac, grêle)",["Estomac","Intestin grêle / duodénum"],"pénétrance élevée (adulte)",80,"souvent multifocaux, évolution variable"]],
+va:[["PDGFRA p.Asp842Val","résistante à l'imatinib → avapritinib"]],
+cr:["GIST multiples/familiaux, hyperpigmentation périnéale/acrale, mastocytose associée ; GIST pédiatrique ou SDH-déficient → penser plutôt SDHx (fiche phéo/PGL)"],
+su:["Endoscopies/imagerie périodiques ; examen dermatologique"],
+tt:["Imatinib selon la mutation (exon 11 sensible) ; p.Asp842Val (PDGFRA) → avapritinib ; chirurgie des lésions évolutives"],
+src:["GeneReviews / Postow & Robson 2012","NCCN GIST"]},
+
+{id:"ext",nom:"Exostoses multiples héréditaires (EXT1/EXT2)",al:["ostéochondromes multiples","maladie exostosante"],cat:"os",pre:"≈ 1/50 000",tr:"AD",
+genes:[["EXT1","formes souvent plus sévères"],["EXT2",""]],
+sp:[["Chondrosarcome (transformation d'un ostéochondrome)",["Os"],"≈ 2–5 % vie entière",4,"suspecter si croissance APRÈS la puberté, douleur, coiffe cartilagineuse > 1,5–2 cm"]],
+va:[],
+cr:["Ostéochondromes multiples (≥ 2) des métaphyses des os longs, déformations, petite taille relative"],
+su:["Examen clinique périodique ; imagerie (IRM de la coiffe) au moindre changement après la fin de la croissance ; cartographie initiale des lésions axiales (bassin, omoplate — plus à risque)"],
+tt:["Exérèse chirurgicale des lésions symptomatiques ou suspectes ; chondrosarcome secondaire : chirurgie (chimio/radio peu efficaces)"],
+src:["GeneReviews : Hereditary Multiple Osteochondromas"]},
+
+{id:"chordome",nom:"Chordome familial (TBXT)",al:["brachyury","chordome"],cat:"os",pre:"exceptionnel",tr:"AD",
+genes:[["TBXT","(brachyury) — duplications germinales du gène dans les familles de chordomes"]],
+sp:[["Chordome (clivus, rachis, sacrum)",["Os","Cerveau / SNC"],"élevé dans les familles porteuses (mal quantifié)",null,"tumeur de la notochorde résiduelle"]],
+va:[["TBXT duplication germinale","mécanisme récurrent des formes familiales"]],
+cr:["≥ 2 chordomes familiaux ; chordome pédiatrique → discuter aussi le déficit SMARCB1 (chordomes peu différenciés INI1−)"],
+su:["Pas de protocole validé ; IRM ciblée si symptômes ou au cas par cas dans les familles"],
+tt:["Chirurgie maximale + protonthérapie ; formes INI1− : essais (tazémétostat)"],
+src:["Yang 2009 (TBXT)","GeneReviews"]},
+
+{id:"rasopathies",nom:"RASopathies à risque tumoral (Costello, Noonan, CBL)",al:["Costello","Noonan","HRAS","PTPN11","JMML","LMMJ"],cat:"ped",pre:"Noonan ≈ 1/1 000–2 500 ; Costello très rare",tr:"AD (souvent de novo)",
+genes:[["HRAS","syndrome de Costello — le risque tumoral le plus élevé des RASopathies (≈ 15 %)"],["PTPN11","Noonan (≈ 50 %) ; certains variants → LMMJ/troubles myéloprolifératifs"],["CBL","syndrome Noonan-like : LMMJ parfois spontanément régressive"],["KRAS / RAF1 / SOS1 / autres","risque tumoral globalement faible"]],
+sp:[["Rhabdomyosarcome embryonnaire — Costello",["Tissus mous / sarcomes"],"≈ 10–15 %",12,"abdomen/pelvis, petite enfance"],
+["Neuroblastome — Costello",["Surrénale (cortex)"],"≈ 3–5 %",4,""],
+["Carcinome urothélial de vessie — Costello",["Voies urinaires / vessie"],"≈ 5–10 % (adolescent/adulte jeune — âge inhabituel)",7,""],
+["LMMJ / syndromes myéloprolifératifs — Noonan (PTPN11, CBL)",["Sang / moelle"],"rare (formes parfois transitoires)",null,"distinguer des LMMJ sporadiques agressives"]],
+va:[["HRAS p.Gly12Ser","variant majoritaire de Costello"]],
+cr:["Costello : RCIU paradoxal avec macrosomie relative, peau redondante, papillomes périnasaux, cardiopathie (CMH), déficience intellectuelle ; Noonan : dysmorphie, cardiopathie (sténose pulmonaire), petite taille"],
+su:["Costello : échographie abdomino-pelvienne /3–4 mois jusqu'à 8–10 ans (rhabdomyosarcome, neuroblastome), analyse d'urines/cystoscopie discutée dès 10 ans (vessie)","Noonan PTPN11/CBL à risque : NFS si signes ; pas de dépistage systématique validé"],
+tt:["Tumeurs : protocoles standards ; LMMJ CBL : surveillance possible (régressions spontanées documentées) en centre expert"],
+src:["Gripp 2019 (Costello guidelines)","Kratz 2011 (risque tumoral RASopathies)","GeneReviews"]},
+
+{id:"sgb",nom:"Syndrome de Simpson-Golabi-Behmel (GPC3)",al:["SGBS"],cat:"ped",pre:"rare",tr:"lié à l'X (garçons atteints ; mères conductrices peu symptomatiques)",
+genes:[["GPC3","glypicane 3 — régulation de la croissance (IGF2)"]],
+sp:[["Néphroblastome (Wilms)",["Rein"],"≈ 5–10 %",8,"syndrome de croissance excessive « BWS-like » du garçon"],
+["Hépatoblastome, neuroblastome, gonadoblastome",["Foie / voies biliaires","Surrénale (cortex)","Testicule"],"décrits (plus rares)",null,""]],
+va:[],
+cr:["Macrosomie pré/postnatale + dysmorphie « bouledogue » + organomégalie + anomalies squelettiques/polydactylie chez un garçon ; diagnostic différentiel du BWS"],
+su:["Comme BWS : échographie abdominale + AFP /3 mois jusqu'à 4 ans, puis échographie rénale /3 mois jusqu'à 7 ans"],
+tt:["Protocoles pédiatriques standards"],
+src:["GeneReviews : SGBS","Recommandations surveillance overgrowth (AACR 2017)"]},
+
+{id:"perlman",nom:"Syndrome de Perlman (DIS3L2)",al:["Perlman"],cat:"ped",pre:"exceptionnel",tr:"AR",
+genes:[["DIS3L2","exoribonucléase (dégradation des ARN, cible let-7/LIN28)"]],
+sp:[["Néphroblastome (Wilms)",["Rein"],"≈ 60 % des survivants",60,"le risque de Wilms le plus élevé de tous les syndromes de croissance excessive"]],
+va:[],
+cr:["Macrosomie néonatale + polyhydramnios + dysmorphie + néphromégalie avec néphroblastomatose ; mortalité néonatale élevée"],
+su:["Échographie rénale toutes les 3 mois jusqu'à 7–8 ans chez les survivants"],
+tt:["Protocoles Wilms standards ; chirurgie d'épargne néphronique si bilatéral"],
+src:["Astuti 2012 (DIS3L2)","AACR pediatric surveillance 2017"]},
+
+{id:"elp1",nom:"Prédisposition au médulloblastome ELP1",al:["ELP1","médulloblastome familial"],cat:"ped",pre:"≈ 15 % des médulloblastomes SHH de l'enfant (découverte 2020)",tr:"AD (pénétrance incomplète)",
+genes:[["ELP1","complexe Elongator ; médulloblastomes SHH exclusivement, souvent avec perte 9q et mutation PTCH1 somatique"]],
+sp:[["Médulloblastome SHH de l'enfant",["Cerveau / SNC"],"pénétrance mal connue (faible à modérée)",null,"y penser dans tout médulloblastome SHH pédiatrique"]],
+va:[],
+cr:["Médulloblastome SHH de l'enfant → panel germinal incluant ELP1, PTCH1, SUFU, TP53 (recommandation croissante)"],
+su:["Pas de protocole consensuel (données récentes) ; information familiale"],
+tt:["Traitement standard du médulloblastome ; l'identification germinale modifie surtout le conseil familial"],
+src:["Waszak, Nature 2020","Recommandations SIOPE germline"]}
+];
+/* ---------- utilitaires ---------- */
+const norm=s=>(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const content=document.getElementById("content");
+const side=document.getElementById("side");
+const layout=document.getElementById("layout");
+const qInput=document.getElementById("q");
+const overlay=document.getElementById("overlay");
+const panel=document.getElementById("panel");
+let mode="syn", query="", cat=null, trF=null, orgSel=null, genSel=null, panelId=null;
+
+function hi(text){
+  const q=norm(query);
+  if(!q) return esc(text);
+  const n=norm(text); let out="",i=0;
+  while(true){
+    const j=n.indexOf(q,i);
+    if(j===-1){out+=esc(text.slice(i));break;}
+    out+=esc(text.slice(i,j))+"<mark>"+esc(text.slice(j,j+q.length))+"</mark>";
+    i=j+q.length;
+  }
+  return out;
+}
+
+/* thème */
+const root=document.documentElement;
+function pget(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function pset(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+let theme=pget("sp-theme");
+if(!theme) theme=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light";
+function applyTheme(){if(theme==="dark")root.dataset.theme="dark"; else delete root.dataset.theme;}
+applyTheme();
+document.getElementById("t-theme").addEventListener("click",()=>{theme=(theme==="dark")?"light":"dark";pset("sp-theme",theme);applyTheme();});
+
+/* ---------- index ---------- */
+const ORGS={}; const GENES={};
+DATA.forEach(d=>{
+  d.sp.forEach(t=>{(t[1]||[]).forEach(o=>{(ORGS[o]=ORGS[o]||[]).push({id:d.id,nom:d.nom,t:t[0],r:t[2],rv:t[3],note:t[4]||""});});});
+  d.genes.forEach(g=>{const key=g[0].split(" ")[0]; (GENES[key]=GENES[key]||new Set()).add(d.id);});
+});
+const ORG_LIST=Object.keys(ORGS).sort((a,b)=>a.localeCompare(b,"fr"));
+const GENE_LIST=Object.keys(GENES).sort();
+document.getElementById("hmeta").innerHTML=DATA.length+" syndromes<br>"+GENE_LIST.length+" gènes · "+ORG_LIST.length+" organes";
+
+const TRS=[["AD","AD"],["AR","AR"],["X","Lié à l'X"],["emp","Empreinte"]];
+function trMatch(d,k){
+  const t=d.tr;
+  if(k==="AD") return /\bAD\b/.test(t);
+  if(k==="AR") return /\bAR\b/.test(t);
+  if(k==="X") return /à l'X/i.test(t);
+  if(k==="emp") return /empreinte/i.test(t);
+  return true;
+}
+function synMatches(d,q){
+  if(!q) return true;
+  if(norm(d.nom).includes(q)) return true;
+  if(d.al.some(a=>norm(a).includes(q))) return true;
+  if(d.genes.some(g=>norm(g[0]).includes(q))) return true;
+  if(d.sp.some(t=>norm(t[0]).includes(q)||(t[1]||[]).some(o=>norm(o).includes(q)))) return true;
+  if(d.va.some(v=>norm(v[0]).includes(q))) return true;
+  return false;
+}
+function filtered(){
+  const q=norm(query);
+  return DATA.filter(d=>synMatches(d,q)&&(!cat||d.cat===cat)&&(!trF||trMatch(d,trF)));
+}
+
+/* ---------- panneau fiche ---------- */
+function bar(t){
+  const orgs=(t[1]||[]).map(o=>'<span class="torg" data-org="'+esc(o)+'">'+esc(o)+"</span>").join("");
+  const note=t[4]?'<span class="tnote">'+esc(t[4])+'</span>':"";
+  const b=(t[3]==null)?'<span class="nobar">non quantifié / voir texte</span>'
+    :'<div class="bartrack"><div class="bar" style="width:'+Math.max(2,Math.min(100,t[3]))+'%"></div></div>';
+  return '<div class="trow"><div class="tname">'+esc(t[0])+orgs+note+'</div>'+b+'<div class="rtxt">'+esc(t[2])+"</div></div>";
+}
+function section(cls,titleCls,title,inner){
+  return inner?'<div class="sec '+cls+'"><div class="sec-h '+titleCls+'">'+title+"</div>"+inner+"</div>":"";
+}
+function fiche(d){
+  const sp=[...d.sp].sort((a,b)=>(b[3]??-1)-(a[3]??-1)).map(bar).join("");
+  const genes=d.genes.map(g=>'<div class="generow"><b>'+esc(g[0])+"</b>"+(g[1]?' — <span>'+esc(g[1])+"</span>":"")+"</div>").join("");
+  const va=d.va.map(v=>'<div class="vrow"><code>'+esc(v[0])+"</code>"+(v[1]?" <span>— "+esc(v[1])+"</span>":"")+"</div>").join("");
+  const list=a=>a&&a.length?'<ul class="plain">'+a.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>":"";
+  return '<div class="p-head"><div>'
+    +'<div class="p-eyebrow">'+esc(CATS[d.cat])+'</div>'
+    +'<div class="p-title">'+esc(d.nom)+'</div>'
+    +(d.al.length?'<div class="p-alias">'+esc(d.al.join(" · "))+'</div>':"")
+    +'</div><div class="p-actions">'
+    +'<button class="p-btn" id="p-close" aria-label="Fermer">✕</button>'
+    +"</div></div>"
+    +'<div class="p-body">'
+    +'<div class="factline"><span>Transmission : <b>'+esc(d.tr)+"</b></span><span>Fréquence : <b>"+esc(d.pre)+"</b></span></div>"
+    +section("","h-spec","Spectre tumoral — du plus fréquent au plus rare",sp)
+    +section("","h-gene","Gènes",genes)
+    +section("","h-var","Variants récurrents / fondateurs",va)
+    +section("sec-crit","h-crit","Critères d'indication du test",list(d.cr))
+    +section("sec-surv","h-surv","Surveillance",list(d.su))
+    +section("sec-ttt","h-ttt","Implications thérapeutiques",list(d.tt))
+    +section("","h-src","Sources",'<div class="srcs">'+d.src.map(esc).join(" · ")+"</div>")
+    +"</div>";
+}
+function panelWidth(){let w=parseInt(pget("sp-pw")||"620",10); if(isNaN(w))w=620; return Math.max(380,Math.min(w,Math.round(window.innerWidth*0.95)));}
+function openPanel(id){
+  const d=DATA.find(x=>x.id===id); if(!d) return;
+  panelId=id;
+  panel.innerHTML='<div class="p-resize" title="Glisser pour redimensionner (double-clic : réinitialiser)"></div>'+fiche(d);
+  panel.style.width=panelWidth()+"px";
+  panel.classList.add("open"); overlay.classList.add("open");
+  document.body.style.overflow="hidden";
+  panel.scrollTop=0; const pb=panel.querySelector(".p-body"); if(pb) pb.scrollTop=0;
+  document.getElementById("p-close").addEventListener("click",closePanel);
+  panel.querySelectorAll("[data-org]").forEach(el=>el.addEventListener("click",()=>{
+    closePanel(); mode="org"; orgSel=el.dataset.org; syncTabs(); render(); window.scrollTo({top:0});
+  }));
+}
+function closePanel(){panelId=null;panel.classList.remove("open");overlay.classList.remove("open");document.body.style.overflow="";}
+overlay.addEventListener("click",closePanel);
+/* redimensionnement du panneau par sa bordure gauche */
+let rsz=null;
+panel.addEventListener("pointerdown",e=>{
+  const h=e.target.closest(".p-resize"); if(!h) return;
+  rsz={px:e.clientX,w:panel.getBoundingClientRect().width};
+  panel.classList.add("resizing");
+  h.setPointerCapture(e.pointerId);
+  e.preventDefault();
+});
+panel.addEventListener("pointermove",e=>{
+  if(!rsz) return;
+  const w=Math.max(380,Math.min(rsz.w+(rsz.px-e.clientX),Math.round(window.innerWidth*0.95)));
+  panel.style.width=w+"px";
+});
+function endResize(){
+  if(!rsz) return;
+  rsz=null; panel.classList.remove("resizing");
+  pset("sp-pw",String(Math.round(panel.getBoundingClientRect().width)));
+}
+panel.addEventListener("pointerup",endResize);
+panel.addEventListener("pointercancel",endResize);
+panel.addEventListener("dblclick",e=>{
+  if(!e.target.closest(".p-resize")) return;
+  panel.style.width="620px"; pset("sp-pw","620");
+});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"&&panelId) closePanel();
+  if(e.key==="/"&&document.activeElement!==qInput){e.preventDefault();qInput.focus();qInput.select();}
+});
+
+/* ---------- diagnostic différentiel ---------- */
+const DIAG_GROUPS=[
+["Digestif & pancréas",["Côlon-rectum","Estomac","Intestin grêle / duodénum","Pancréas","Foie / voies biliaires"]],
+["Sein & gynécologie",["Sein","Ovaire","Endomètre / utérus","Col utérin"]],
+["Rein & urologie",["Rein","Voies urinaires / vessie","Prostate","Testicule"]],
+["Endocrinien",["Thyroïde","Parathyroïdes","Hypophyse","Surrénale (cortex)","Phéochromocytome / paragangliome","Thymus"]],
+["Peau & œil",["Peau","Œil"]],
+["SNC & ORL",["Cerveau / SNC","ORL / tête et cou"]],
+["Thorax",["Poumon / plèvre","Cœur"]],
+["Hématologie",["Sang / moelle"]],
+["Os & tissus mous",["Os","Tissus mous / sarcomes"]]];
+let diagSel=new Set();
+function viewDiag(){
+  side.style.display="none"; layout.classList.add("nosb");
+  const q=norm(query);
+  const grouped=new Set(); DIAG_GROUPS.forEach(g=>g[1].forEach(o=>grouped.add(o)));
+  const rest=ORG_LIST.filter(o=>!grouped.has(o));
+  const groups=rest.length?DIAG_GROUPS.concat([["Autres",rest]]):DIAG_GROUPS;
+  let html='<div class="diag-intro"><div class="diag-title">Diagnostic différentiel</div>'
+    +'<div class="diag-sub">Cocher la ou les localisations tumorales observées chez le patient ou dans la famille : les syndromes compatibles s\u2019affichent, classés par nombre de localisations couvertes puis par niveau de risque.</div></div>';
+  groups.forEach(gr=>{
+    const t=gr[0], orgs=gr[1];
+    const os=orgs.filter(o=>ORGS[o]&&(!q||norm(o).includes(q)||diagSel.has(o)));
+    if(!os.length) return;
+    html+='<div class="dgroup"><div class="dgroup-t">'+esc(t)+'</div><div class="dchips">'
+      +os.map(o=>'<span class="dchip'+(diagSel.has(o)?" on":"")+'" tabindex="0" role="checkbox" aria-checked="'+diagSel.has(o)+'" data-diag="'+esc(o)+'">'+esc(o)+"</span>").join("")
+      +"</div></div>";
+  });
+  html+='<div class="diag-bar"><span class="diag-count">'+diagSel.size+" localisation(s) sélectionnée(s)</span>"
+    +(diagSel.size?'<button class="diag-clear" data-diag-clear>Tout effacer</button>':"")+"</div>";
+  if(diagSel.size){
+    const res=DATA.map(d=>{
+      const rows=d.sp.filter(t=>(t[1]||[]).some(o=>diagSel.has(o)));
+      const orgsHit=new Set(); rows.forEach(t=>(t[1]||[]).forEach(o=>{if(diagSel.has(o))orgsHit.add(o);}));
+      const maxrv=rows.reduce((m,t)=>Math.max(m,t[3]??0),0);
+      return {d:d,rows:rows,n:orgsHit.size,maxrv:maxrv};
+    }).filter(x=>x.n>0).sort((a,b)=>b.n-a.n||b.maxrv-a.maxrv);
+    html+='<div class="hitgroup">'+res.length+" syndrome(s) compatible(s)</div>";
+    html+=res.map(x=>{
+      const rows=[...x.rows].sort((a,b)=>(b[3]??-1)-(a[3]??-1)).map(bar).join("");
+      const genes=x.d.genes.slice(0,5).map(g=>g[0].split(" ")[0]).join(" · ");
+      return '<div class="dres" data-open="'+x.d.id+'" tabindex="0" role="button">'
+        +'<div class="dres-head"><span class="dres-name">'+esc(x.d.nom)+'</span>'
+        +'<span class="dres-score">'+x.n+"/"+diagSel.size+" localisation(s)</span></div>"
+        +'<div class="dres-genes">'+esc(genes)+"</div>"+rows+"</div>";
+    }).join("")||'<div class="empty">Aucun syndrome ne couvre ces localisations.</div>';
+  } else {
+    html+='<div class="empty">Exemple : cocher « Estomac » + « Sein » fait remonter CDH1 (gastrique diffus + lobulaire) devant Lynch, Peutz-Jeghers, Li-Fraumeni…</div>';
+  }
+  content.innerHTML=html;
+}
+
+/* ---------- barre latérale ---------- */
+function renderSide(){
+  const counts={};
+  DATA.forEach(d=>counts[d.cat]=(counts[d.cat]||0)+1);
+  let html='<div><div class="s-label">Catégories</div>';
+  html+='<button class="catbtn'+(cat===null?" on":"")+'" data-cat="">Toutes <small>'+DATA.length+"</small></button>";
+  Object.keys(CATS).forEach(c=>{
+    html+='<button class="catbtn'+(cat===c?" on":"")+'" data-cat="'+c+'">'+CATS[c]+" <small>"+(counts[c]||0)+"</small></button>";
+  });
+  html+="</div>";
+  html+='<div><div class="s-label">Transmission</div><div class="trbtns">';
+  TRS.forEach(([k,lab])=>{html+='<button class="trb'+(trF===k?" on":"")+'" data-tr="'+k+'">'+lab+"</button>";});
+  html+="</div></div>";
+  html+='<div class="count" id="count"></div>';
+  side.innerHTML=html;
+  side.querySelectorAll("[data-cat]").forEach(b=>b.addEventListener("click",()=>{cat=b.dataset.cat||null;render();}));
+  side.querySelectorAll("[data-tr]").forEach(b=>b.addEventListener("click",()=>{trF=(trF===b.dataset.tr)?null:b.dataset.tr;render();}));
+}
+
+/* ---------- vues ---------- */
+function miniCard(d){
+  const pills=d.genes.slice(0,3).map(g=>'<span class="gpill">'+hi(g[0].split(" ")[0])+"</span>").join("")
+    +(d.genes.length>3?'<span class="gpill more">+'+(d.genes.length-3)+"</span>":"");
+  const top=[...d.sp].sort((a,b)=>(b[3]??-1)-(a[3]??-1)).slice(0,3).map(t=>{
+    const b=(t[3]==null)?'<div class="minitrack"></div>':'<div class="minitrack"><div class="minibar" style="width:'+Math.max(3,Math.min(100,t[3]))+'%"></div></div>';
+    return '<div class="gc-row"><span class="nm">'+esc(t[0])+"</span>"+b+"</div>";
+  }).join("");
+  return '<div class="gcard" data-open="'+d.id+'" tabindex="0" role="button" aria-label="Ouvrir la fiche '+esc(d.nom)+'">'
+    +'<div class="gc-cat">'+esc(CATS[d.cat])+'</div>'
+    +'<div class="gc-name">'+hi(d.nom)+'</div>'
+    +'<div class="gc-genes">'+pills+"</div>"
+    +'<div class="gc-prev">'+top+"</div></div>";
+}
+function viewSyn(){
+  layout.classList.remove("nosb");
+  side.style.display="";
+  renderSide();
+  const ds=filtered();
+  const q=norm(query);
+  let extra="";
+  if(q){
+    const gHits=GENE_LIST.filter(g=>norm(g).includes(q));
+    const oHits=ORG_LIST.filter(o=>norm(o).includes(q));
+    if(oHits.length) extra+='<div class="hitgroup">Organes correspondants</div><div class="chips" style="margin-bottom:10px">'+oHits.map(o=>'<span class="chip" tabindex="0" data-org-go="'+esc(o)+'">'+esc(o)+"<small>"+ORGS[o].length+"</small></span>").join("")+"</div>";
+    if(gHits.length) extra+='<div class="hitgroup">Gènes correspondants</div><div class="chips" style="margin-bottom:10px">'+gHits.map(g=>'<span class="chip" tabindex="0" data-gene-go="'+esc(g)+'">'+esc(g)+"<small>"+GENES[g].size+"</small></span>").join("")+"</div>";
+  }
+  content.innerHTML=extra+'<div class="grid">'+(ds.map(miniCard).join("")||'<div class="empty">Aucune fiche ne correspond aux filtres.</div>')+"</div>";
+  const c=document.getElementById("count");
+  if(c) c.textContent=ds.length+" / "+DATA.length+" fiches affichées";
+}
+function viewOrg(){
+  side.style.display="none"; layout.classList.add("nosb");
+  const q=norm(query);
+  if(!orgSel){
+    const list=ORG_LIST.filter(o=>!q||norm(o).includes(q));
+    content.innerHTML='<div class="meta">Choisir un organe : toutes les tumeurs héréditaires le concernant, tous syndromes confondus, triées par risque.</div><div class="chips">'
+      +list.map(o=>'<span class="chip" tabindex="0" data-org-go="'+esc(o)+'">'+esc(o)+"<small>"+ORGS[o].length+"</small></span>").join("")
+      +(list.length?"":'<div class="empty">Aucun organe ne correspond.</div>')+"</div>";
+    return;
+  }
+  const rows=[...ORGS[orgSel]].sort((a,b)=>(b.rv??-1)-(a.rv??-1));
+  content.innerHTML='<button class="back" data-back="org">← Tous les organes</button>'
+    +'<div class="pane-title">'+esc(orgSel)+'</div><div class="pane-sub">'+rows.length+' entrées — cliquer une ligne pour ouvrir la fiche du syndrome.</div>'
+    +rows.map(r=>{
+      const b=(r.rv==null)?'<span class="nobar">non quantifié</span>':'<div class="bartrack"><div class="bar" style="width:'+Math.max(2,Math.min(100,r.rv))+'%"></div></div>';
+      return '<div class="orow" data-open="'+r.id+'" tabindex="0" role="button"><div class="tname">'+esc(r.t)
+        +'<span class="tnote">'+(r.note?esc(r.note)+" — ":"")+esc(r.nom)+"</span></div>"+b+'<div class="rtxt">'+esc(r.r)+"</div></div>";
+    }).join("");
+}
+function viewGen(){
+  side.style.display="none"; layout.classList.add("nosb");
+  const q=norm(query);
+  if(!genSel){
+    const list=GENE_LIST.filter(g=>!q||norm(g).includes(q));
+    content.innerHTML='<div class="meta">Du gène vers le spectre : choisir un gène.</div><div class="chips">'
+      +list.map(g=>'<span class="chip" tabindex="0" data-gene-go="'+esc(g)+'"><b style="font-family:var(--mono)">'+esc(g)+"</b><small>"+GENES[g].size+"</small></span>").join("")
+      +(list.length?"":'<div class="empty">Aucun gène ne correspond.</div>')+"</div>";
+    return;
+  }
+  const ds=DATA.filter(d=>GENES[genSel]&&GENES[genSel].has(d.id));
+  content.innerHTML='<button class="back" data-back="gen">← Tous les gènes</button>'
+    +'<div class="pane-title" style="font-family:var(--mono)">'+esc(genSel)+'</div><div class="pane-sub">'+ds.length+" syndrome(s) associé(s) — cliquer pour ouvrir la fiche.</div>"
+    +'<div class="grid">'+ds.map(miniCard).join("")+"</div>";
+}
+
+/* ---------- navigation ---------- */
+function render(){
+  if(mode==="syn") viewSyn();
+  else if(mode==="org") viewOrg();
+  else if(mode==="diag") viewDiag();
+  else viewGen();
+}
+function syncTabs(){document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x.dataset.mode===mode));}
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
+  mode=b.dataset.mode; orgSel=null; genSel=null; syncTabs(); render();
+}));
+qInput.addEventListener("input",()=>{query=qInput.value.trim(); if(mode==="org")orgSel=null; if(mode==="gen")genSel=null; render();});
+document.addEventListener("click",e=>{
+  const dc=e.target.closest("[data-diag]");
+  if(dc){const o=dc.dataset.diag; diagSel.has(o)?diagSel.delete(o):diagSel.add(o); render(); return;}
+  if(e.target.closest("[data-diag-clear]")){diagSel.clear(); render(); return;}
+  const open=e.target.closest("[data-open]");
+  if(open){openPanel(open.dataset.open); return;}
+  const og=e.target.closest("[data-org-go]");
+  if(og){mode="org"; orgSel=og.dataset.orgGo; syncTabs(); render(); window.scrollTo({top:0}); return;}
+  const gg=e.target.closest("[data-gene-go]");
+  if(gg){mode="gen"; genSel=gg.dataset.geneGo; syncTabs(); render(); window.scrollTo({top:0}); return;}
+  const back=e.target.closest("[data-back]");
+  if(back){if(back.dataset.back==="org")orgSel=null; else genSel=null; render(); return;}
+});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Enter"||e.key===" "){
+    const t=e.target.closest&&e.target.closest("[data-open],[data-org-go],[data-gene-go],[data-diag]");
+    if(t){e.preventDefault(); t.click();}
+  }
+});
+render();
+</script>
+</body>
+</html>
