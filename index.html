@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Spectres — Tableau de bord d'oncogénétique</title>
+<title>Spectres tumoraux</title>
+<meta name="description" content="Atlas des prédispositions héréditaires aux cancers : spectres tumoraux, gènes, variants récurrents, conseil génétique, surveillance.">
 <style>
 :root{
   --paper:#F0F2F2; --card:#FFFFFF; --ink:#202426; --ink-soft:#4C5453; --line:#D2D9D6;
@@ -12,6 +13,7 @@
   --amber:#7D5104; --amber-soft:#F5EDD8; --amber-ink:#5C3D08;
   --berry:#8A3352; --berry-soft:#F6E4EB;
   --code-bg:#EAEEEC; --hover:#F6F9F8; --mark:#F3E3A8;
+  --violet:#5B4A9C; --violet-soft:#ECE8F6;
   --shadow:0 18px 50px rgba(20,40,35,.25);
   --mono:"Consolas","Menlo","DejaVu Sans Mono",monospace;
   --serif:Georgia,"Times New Roman",serif;
@@ -24,6 +26,7 @@ html[data-theme="dark"]{
   --amber:#D9B45B; --amber-soft:#322B17; --amber-ink:#E3CB84;
   --berry:#D993A6; --berry-soft:#342228;
   --code-bg:#2F2F34; --hover:#2B2B30; --mark:#57431D;
+  --violet:#B9A8EC; --violet-soft:#2D2939;
   --shadow:0 18px 60px rgba(0,0,0,.55);
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -43,10 +46,11 @@ h1 em{font-style:italic;color:var(--acc)}
 #q:focus{border-color:var(--acc)}
 #q::placeholder{color:var(--ink-soft);opacity:.75}
 .tabs{display:flex;gap:6px}
-.tab{border:2px solid var(--line);background:var(--card);color:var(--ink-soft);padding:9px 15px;border-radius:11px;cursor:pointer;font-size:.92rem;font-weight:600}
+.tab{white-space:nowrap;flex-shrink:0;border:2px solid var(--line);background:var(--card);color:var(--ink-soft);padding:9px 15px;border-radius:11px;cursor:pointer;font-size:.92rem;font-weight:600}
 .tab.on{background:var(--acc);border-color:var(--acc);color:#fff}
 html[data-theme="dark"] .tab.on{color:#1B1B1E}
-.tool{border:2px solid var(--line);background:var(--card);color:var(--ink);padding:9px 12px;border-radius:11px;cursor:pointer;font-size:.9rem;font-weight:600;margin-left:auto}
+.tool{flex-shrink:0;border:2px solid var(--line);background:var(--card);color:var(--ink);padding:7px 12px;border-radius:11px;cursor:pointer;font-size:1rem;font-weight:600}
+.hright{display:flex;align-items:center;gap:16px;margin-left:auto}
 .tool:hover,.tab:hover{border-color:var(--acc)}
 button:focus-visible,#q:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 .layout{position:relative;z-index:1;max-width:1360px;margin:0 auto;padding:18px 24px 70px;display:grid;grid-template-columns:230px 1fr;gap:22px;align-items:start}
@@ -158,11 +162,127 @@ footer{position:relative;z-index:1;max-width:1360px;margin:0 auto 40px;padding:0
 .dres-name{font-family:var(--serif);font-size:1.1rem}
 .dres-score{font-family:var(--mono);font-size:.78rem;font-weight:700;color:var(--acc);background:var(--acc-soft);border-radius:6px;padding:2px 8px;white-space:nowrap}
 .dres-genes{color:var(--ink-soft);font-size:.8rem;font-family:var(--mono);margin-bottom:6px}
+/* ── v2 : repères, conseil, gènes, matrice, impression ── */
+.mono{font-family:var(--mono)}
+.mb{margin-bottom:12px}
+.mt{margin-top:10px}
+.bartrack,.minitrack{position:relative}
+.bartrack{overflow:visible}
+.bartrack .bar{border-radius:7px}
+.popmk{position:absolute;top:-3px;bottom:-3px;width:3px;margin-left:-1.5px;background:var(--ink);border-radius:2px;box-shadow:0 0 0 1.5px var(--card);z-index:1}
+.legend{display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:.76rem;color:var(--ink-soft);margin:0 0 6px}
+.lg-bar{display:inline-block;width:30px;height:9px;border-radius:5px;background:linear-gradient(90deg,var(--acc),var(--acc-2));vertical-align:middle;margin-right:6px}
+.lg-pop{display:inline-block;width:2px;height:13px;background:var(--ink);opacity:.7;vertical-align:middle;margin-right:6px}
+.p-title{font-weight:400}
+.p-nav{position:sticky;top:-14px;z-index:3;background:var(--card);display:flex;flex-wrap:wrap;gap:5px;padding:10px 0 9px;margin:-14px 0 8px;border-bottom:1px solid var(--line)}
+.p-nav a{font-size:.72rem;font-weight:700;text-decoration:none;color:var(--ink-soft);border:1.5px solid var(--line);border-radius:14px;padding:1px 8px}
+.p-nav a:hover{color:var(--acc);border-color:var(--acc)}
+.sec{scroll-margin-top:52px}
+.h-cg{color:var(--violet)}
+.sec-cg ul.plain li::before{color:var(--violet)}
+.cg-age{background:var(--violet-soft);border-left:3px solid var(--violet);border-radius:0 9px 9px 0;padding:8px 12px;font-size:.9rem;margin-bottom:6px}
+.glink{color:var(--acc);text-decoration:none;border-bottom:1px dotted currentColor}
+.glink:hover{border-bottom-style:solid}
+.links{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px}
+.links a{font-size:.78rem;font-weight:600;text-decoration:none;color:var(--blue);background:var(--blue-soft);border-radius:7px;padding:3px 9px}
+.links a:hover{text-decoration:underline}
+a.ext{margin-left:6px;font-size:.74rem;color:var(--blue);text-decoration:none;white-space:nowrap}
+a.ext:hover{text-decoration:underline}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,16px);background:var(--ink);color:var(--paper);padding:9px 16px;border-radius:10px;font-size:.88rem;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:90}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.hit-txt{color:var(--amber);letter-spacing:.05em}
+.recent .catbtn{font-size:.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.gpill.click{cursor:pointer}
+.gpill.click:hover{background:var(--acc);color:var(--card)}
+.panelbox{background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:11px 14px;margin:4px 0 14px}
+.linkbtn{border:none;background:none;color:var(--acc);font-weight:600;font-size:.8rem;cursor:pointer;margin-top:8px;padding:0;text-decoration:underline dotted}
+.gsec{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:13px 16px;margin-bottom:12px}
+.gsec-h{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline;margin-bottom:4px}
+.gsec-h .nm{font-family:var(--serif);font-size:1.1rem;cursor:pointer}
+.gsec-h .nm:hover{color:var(--acc)}
+.bial{font-size:.86rem;background:var(--amber-soft);color:var(--amber-ink);border-radius:9px;padding:8px 12px;margin:0 0 12px}
+.bial a{color:inherit;font-weight:700}
+.btn{border:1.5px solid var(--acc);background:var(--acc-soft);color:var(--acc);border-radius:9px;padding:7px 14px;font-weight:700;cursor:pointer;font-size:.86rem;margin-top:6px}
+.btn:hover{background:var(--acc);color:var(--card)}
+.cv-load{font-family:var(--mono);font-size:.82rem;color:var(--ink-soft);padding:8px 0}
+.cv-meta{font-size:.8rem;color:var(--ink-soft);margin:6px 0 8px}
+.cv-scroll{overflow-x:auto}
+.cvt{width:100%;border-collapse:collapse;font-size:.83rem}
+.cvt th{text-align:left;font-family:var(--mono);font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);border-bottom:1.5px solid var(--line);padding:6px}
+.cvt td{border-bottom:1px dashed var(--line);padding:6px;vertical-align:top}
+.cvt td code{font-family:var(--mono);font-size:.78rem;word-break:break-word}
+.cvt a{color:var(--ink);text-decoration:none}
+.cvt a:hover code{color:var(--acc)}
+.cvt .num{font-family:var(--mono);font-weight:700;text-align:right}
+.stars{color:var(--amber);letter-spacing:1px;white-space:nowrap}
+.dgrid{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:22px;align-items:start}
+.dsel{position:sticky;top:76px;max-height:calc(100vh - 92px);overflow:auto;padding-right:6px}
+.dsel .dchip{padding:5px 10px;font-size:.84rem}
+.dsel .dgroup{margin-bottom:12px}
+.dout .diag-bar{margin-top:0;position:sticky;top:70px;z-index:2}
+.dhead{font-family:var(--serif);font-size:1.05rem;margin:0 0 8px}
+.dchip.sign.on{border-color:var(--amber);background:var(--amber-soft);color:var(--amber-ink)}
+.dchip.sign.on::before{background:var(--amber);border-color:var(--amber)}
+.dres.full{border-color:var(--acc)}
+.dres-signs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px}
+.stag{font-size:.74rem;background:var(--amber-soft);color:var(--amber-ink);border-radius:6px;padding:1px 7px}
+.mwrap{overflow:auto;border:1.5px solid var(--line);border-radius:14px;background:var(--card);max-height:calc(100vh - 150px)}
+table.mx{border-collapse:separate;border-spacing:0;font-size:.8rem}
+.mx th.org{position:sticky;top:0;background:var(--card);z-index:2;height:170px;vertical-align:bottom;padding:6px 0;border-bottom:1.5px solid var(--line);min-width:26px}
+.mx th.org span{writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;display:inline-block;font-weight:600;color:var(--ink-soft);cursor:pointer;font-size:.76rem}
+.mx th.org span:hover{color:var(--acc)}
+.mx th.corner{position:sticky;left:0;top:0;z-index:4;background:var(--card);border-bottom:1.5px solid var(--line);border-right:1.5px solid var(--line)}
+.mx th.syn{position:sticky;left:0;background:var(--card);z-index:1;text-align:left;font-weight:500;padding:3px 10px;white-space:nowrap;max-width:300px;overflow:hidden;text-overflow:ellipsis;border-right:1.5px solid var(--line);border-bottom:1px solid var(--line);cursor:pointer}
+.mx th.syn:hover{color:var(--acc)}
+.mx .gsub{font-family:var(--mono);color:var(--ink-soft);font-size:.68rem;margin-left:7px}
+.mx td{width:26px;min-width:26px;height:25px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);text-align:center;cursor:pointer}
+.mx td:empty:not([data-open]){cursor:default}
+.mx td.q::after{content:"•";color:var(--acc);font-weight:700}
+.mx td[data-open]:hover{outline:2px solid var(--ink);outline-offset:-2px}
+.mx tr:hover th.syn{background:var(--hover)}
+.print-only{display:none}
+footer .disc{margin-top:6px;color:var(--ink-soft);font-style:italic}
+@media (max-width:880px){.dgrid{grid-template-columns:1fr}.dsel{position:static;max-height:none}.dout .diag-bar{position:static}.tabs{overflow-x:auto;flex-wrap:nowrap;max-width:100%}.tool{margin-left:0}}
+@media print{
+  :root,html[data-theme="dark"]{--paper:#fff;--card:#fff;--ink:#111;--ink-soft:#444;--line:#bbb;--acc:#0E7A6C;--acc-2:#3AA491;--acc-soft:#E0F0EB;--track:#e4e9e7;--code-bg:#eee;--violet:#4b3b8f;--violet-soft:#eeeaf7;--blue:#31699C;--blue-soft:#E3EDF6;--amber:#7D5104;--amber-soft:#F5EDD8;--amber-ink:#5C3D08;--berry:#8A3352;--berry-soft:#F6E4EB;--mark:#F3E3A8}
+  header .tool{display:none}
+  body::before,.topbar,aside.sb,.tool,.back,.overlay,.toast,.p-resize,.p-actions,.p-nav,.btn,.linkbtn,.diag-clear{display:none!important}
+  body{background:#fff}
+  .bar::after{display:none}
+  .bar,.minibar,.lg-bar{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body.print-fiche>*:not(#panel){display:none!important}
+  body.print-fiche .panel{position:static;transform:none;width:auto!important;box-shadow:none;border:none;display:block}
+  body.print-fiche .p-body{overflow:visible}
+  body.print-fiche .print-only{display:block}
+  .print-head{font-family:var(--mono);font-size:.7rem;color:#555;margin-bottom:8px}
+  .disclaimer{margin-top:18px;font-size:.75rem;color:#555;font-style:italic}
+  .trow,.sec li{break-inside:avoid}
+  .mwrap{max-height:none;overflow:visible}
+}
 @media (max-width:880px){
   .layout{grid-template-columns:1fr}
   aside.sb{position:static;flex-direction:row;flex-wrap:wrap;gap:14px}
   .sb>div{min-width:180px}
   .hmeta{display:none}
+}
+@media (max-width:880px){
+  .sb .catbtn{display:inline-flex;width:auto;max-width:100%;border:1.5px solid var(--line);border-radius:16px;padding:4px 10px;font-size:.8rem;margin:0 5px 6px 0;gap:6px}
+  .sb .catbtn.on{border-color:var(--acc)}
+  .sb>div{min-width:0;width:100%}
+  .sb .count{display:none}
+}
+@media (max-width:600px){
+  header{flex-wrap:nowrap;align-items:flex-start;padding-top:18px}
+  header>div:first-child{min-width:0}
+  .eyebrow{letter-spacing:.14em}
+  .tab{padding:8px 11px;font-size:.86rem}
+  .trow,.orow{grid-template-columns:1fr auto;row-gap:4px}
+  .trow .tname,.orow .tname{grid-column:1/-1}
+  .rtxt{min-width:0;font-size:.78rem}
+  .p-head{flex-wrap:wrap}
+  .p-actions{margin-left:0}
+  .panel{border-left:none}
+  header,.topbar,.layout{padding-left:16px;padding-right:16px}
 }
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.panel,.overlay,.gcard{transition:none}}
 </style>
@@ -173,25 +293,26 @@ footer{position:relative;z-index:1;max-width:1360px;margin:0 auto 40px;padding:0
     <div class="eyebrow">Atlas · Oncogénétique · Prédispositions héréditaires</div>
     <h1>Spectres <em>tumoraux</em></h1>
   </div>
-  <div class="hmeta" id="hmeta"></div>
+  <div class="hright"><div class="hmeta" id="hmeta"></div><button class="tool" id="t-theme" title="Mode sombre / clair" aria-label="Basculer le mode sombre / clair">◐</button></div>
 </header>
 <div class="topbar">
   <div class="topbar-inner">
-    <input id="q" type="search" autocomplete="off" placeholder="Rechercher : syndrome, gène, organe, tumeur…  [touche /]" aria-label="Recherche">
+    <input id="q" type="search" autocomplete="off" placeholder="Rechercher : syndrome, gène, organe, variant… (plusieurs mots possibles)  [touche /]" aria-label="Recherche">
     <div class="tabs" role="tablist">
       <button class="tab on" data-mode="syn" role="tab">Syndromes</button>
       <button class="tab" data-mode="org" role="tab">Par organe</button>
       <button class="tab" data-mode="gen" role="tab">Par gène</button>
       <button class="tab" data-mode="diag" role="tab">Diagnostic</button>
+      <button class="tab" data-mode="mat" role="tab">Matrice</button>
     </div>
-    <button class="tool" id="t-theme" title="Mode sombre / clair">◐</button>
   </div>
 </div>
 <div class="layout" id="layout">
   <aside class="sb" id="side"></aside>
   <section id="content"></section>
 </div>
-<footer>Sources principales : GeneReviews · NCCN Genetic/Familial High-Risk Assessment · PLSD (Dominguez-Valentin 2020) · Kuchenbaecker JAMA 2017 · GGC-Unicancer, ERN GENTURIS, ATA 2015 (MEN2), IGCLC 2020 (CDH1), C4CMMRD.</footer>
+<footer>Sources principales : GeneReviews · NCCN Genetic/Familial High-Risk Assessment · PLSD (Dominguez-Valentin 2020) · Kuchenbaecker JAMA 2017 · GGC-Unicancer, ERN GENTURIS, ATA 2015 (MEN2), IGCLC 2020 (CDH1), C4CMMRD. Repère population générale : SEER (risque vie entière, approximatif).<div class="disc">Outil d'aide à la consultation : les chiffres sont des estimations issues de cohortes et varient selon le gène, le variant, l'histoire familiale et l'âge. Vérifier les référentiels en vigueur et discuter en RCP avant toute décision.</div></footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="overlay" id="overlay"></div>
 <div class="panel" id="panel" role="dialog" aria-modal="true" aria-label="Fiche syndrome"></div>
 <script>
@@ -207,7 +328,7 @@ sp:[["Sein (femme) — BRCA1",["Sein"],"65–79 % à 80 ans",72,"souvent triple 
 ["Sein (homme) — BRCA2",["Sein"],"≈ 5–8 % vie entière",7,"tout cancer du sein masculin justifie le test"],
 ["Pancréas — BRCA2",["Pancréas"],"≈ 3–7 % vie entière",5,"BRCA1 : ≈ 1–3 %"],
 ["Mélanome — BRCA2",["Peau"],"légèrement accru",null,"cutané et uvéal (association modeste)"]],
-va:[["BRCA1 c.68_69del (p.Glu23Valfs*17)","fondateur ashkénaze (185delAG)"],["BRCA1 c.5266dup (p.Gln1756Profs*74)","fondateur ashkénaze / Europe de l'Est (5382insC)"],["BRCA2 c.5946del (p.Ser1982Argfs*22)","fondateur ashkénaze (6174delT)"],["BRCA1 c.798_799del (p.Ser267Lysfs*19)","fondateur nord-africain récurrent (Maroc, Algérie, Tunisie)"]],
+va:[["BRCA1 c.68_69del (p.Glu23Valfs*17)","fondateur ashkénaze (185delAG)"],["BRCA1 c.5266dup (p.Gln1756Profs*74)","fondateur ashkénaze / Europe de l'Est (5382insC)"],["BRCA2 c.5946del (p.Ser1982Argfs*22)","fondateur ashkénaze (6174delT)"],["BRCA1 c.798_799del (p.Ser267Lysfs*19)","fondateur nord-africain récurrent (Maroc, Algérie, Tunisie)"],["BRCA1 c.181T>G (p.Cys61Gly)","fondateur polonais / Europe centrale"],["BRCA1 c.4035del (p.Glu1346Lysfs*20)","fondateur polonais / balte (4153delA)"],["BRCA2 c.771_775del (p.Asn257Lysfs*17)","fondateur islandais (999del5)"],["BRCA1 c.3481_3491del (p.Glu1161Phefs*3)","fondateur canadien-français"],["BRCA2 c.8537_8538del (p.Glu2846Glyfs*22)","fondateur canadien-français"],["BRCA1 duplication de l'exon 13","réarrangement récurrent (origine britannique) — grands réarrangements BRCA1 ≈ 5–10 % : MLPA indispensable"]],
 cr:["Score d'Eisinger (somme par branche parentale) : mutation identifiée = 5 ; sein < 30 ans = 4 ; sein 30–39 = 3 ; sein 40–49 = 2 ; sein 50–70 = 1 ; sein masculin = 4 ; ovaire = 3. Score ≥ 3 → consultation d'oncogénétique (≥ 5 : indication excellente)",
 "Test quel que soit le contexte familial : carcinome ovarien épithélial de haut grade ; cancer du sein ≤ 40 ans ; sein triple négatif (≤ 60 ans, NCCN : à discuter à tout âge) ; sein masculin ; adénocarcinome pancréatique ; prostate métastatique ou d'emblée haut risque",
 "Analyse en panel (BRCA1/2, PALB2, ± ATM, CHEK2, RAD51C/D, BARD1, TP53, PTEN, CDH1 selon présentation)"],
@@ -221,7 +342,7 @@ sp:[["Sein (femme)",["Sein"],"≈ 40–60 % à 80 ans (53 %)",53,"3e gène majeu
 ["Ovaire",["Ovaire"],"≈ 3–5 %",4,""],
 ["Pancréas",["Pancréas"],"≈ 2–5 %",3,""],
 ["Sein (homme)",["Sein"],"≈ 1 %",1,""]],
-va:[["PALB2 c.1592del (p.Leu531Cysfs*30)","fondateur finlandais"],["PALB2 c.3113G>A (p.Trp1038*)","récurrent (Royaume-Uni, Australie)"]],
+va:[["PALB2 c.1592del (p.Leu531Cysfs*30)","fondateur finlandais"],["PALB2 c.3113G>A (p.Trp1038*)","récurrent (Royaume-Uni, Australie)"],["PALB2 c.509_510del (p.Arg170Ilefs*14)","fondateur polonais"]],
 cr:["Inclus dans les panels sein-ovaire (mêmes portes d'entrée que BRCA : Eisinger ≥ 3, sein précoce, TN, pancréas)"],
 su:["IRM mammaire annuelle + mammographie dès 30 ans (prise en charge calquée sur BRCA)","Annexectomie : à discuter vers 45–50 ans si histoire familiale d'ovaire","Pancréas : imagerie si antécédent familial"],
 tt:["Inhibiteurs de PARP actifs (olaparib, étude TBCRC 048 — mutations germinales PALB2) ; sensibilité aux platines"],
@@ -245,7 +366,7 @@ sp:[["Sein (femme)",["Sein"],"≈ 20–30 % (RR ×2 ; ×4 si ATCD familiaux)",25
 ["Côlon-rectum",["Côlon-rectum"],"légèrement accru (RR ≈ 1,5–2)",null,""],
 ["Prostate",["Prostate"],"modérément accru",null,""],
 ["Thyroïde",["Thyroïde"],"modérément accru",null,""]],
-va:[["CHEK2 c.1100del (p.Thr367Metfs*15)","fondateur nord-européen"],["CHEK2 p.Ile157Thr","faible pénétrance"]],
+va:[["CHEK2 c.1100del (p.Thr367Metfs*15)","fondateur nord-européen"],["CHEK2 p.Ile157Thr","faible pénétrance"],["CHEK2 c.444+1G>A","fondateur polonais / slave"],["CHEK2 del5395 (délétion exons 9–10)","fondateur tchèque / slave"]],
 cr:["Découverte en panel ; le conseil intègre l'histoire familiale (risque très dépendant du contexte)"],
 su:["IRM mammaire annuelle dès 40 ans si c.1100del + histoire familiale ; sinon dépistage renforcé","Coloscopie dès 40 ans si agrégation familiale colique"],
 tt:["Aucune thérapie ciblée germinale validée"],
@@ -256,7 +377,7 @@ genes:[["RAD51C","biallélique = Fanconi type O"],["RAD51D",""],["BRIP1","biall�
 sp:[["Ovaire — RAD51D",["Ovaire"],"≈ 10–13 %",12,"séreux haut grade"],
 ["Ovaire — RAD51C",["Ovaire"],"≈ 10–11 %",11,""],
 ["Ovaire — BRIP1",["Ovaire"],"≈ 5–8 %",6,""],
-["Sein — RAD51C/D",["Sein"],"modérément accru (RR ≈ 2, triple négatif)",null,""]],
+["Sein — RAD51C/RAD51D",["Sein"],"modérément accru (RR ≈ 2, triple négatif)",null,""]],
 va:[],
 cr:["Panels ovaire (tout carcinome séreux de haut grade) et sein"],
 su:["Annexectomie prophylactique à discuter vers 45–50 ans","Sein : surveillance renforcée selon histoire familiale"],
@@ -275,10 +396,10 @@ sp:[["Côlon-rectum — MLH1/MSH2",["Côlon-rectum"],"≈ 35–55 % à 75 ans",4
 ["Pancréas / voies biliaires",["Pancréas"],"≈ 2–6 %",3,""],
 ["SNC (glioblastome)",["Cerveau / SNC"],"≈ 1–4 %",2,"« Turcot type 1 »"],
 ["Peau (Muir-Torre)",["Peau"],"adénomes/carcinomes sébacés, kérato-acanthomes",null,"surtout MSH2"]],
-va:[["MSH2 p.Ala636Pro","fondateur ashkénaze"],["MLH1 délétion exon 16","fondateur finlandais"],["Épimutation constitutionnelle MLH1","rare, souvent non transmise — à évoquer si IHC MLH1− sans variant"]],
+va:[["MSH2 p.Ala636Pro","fondateur ashkénaze"],["MLH1 délétion exon 16","fondateur finlandais"],["Épimutation constitutionnelle MLH1","rare, souvent non transmise — à évoquer si IHC MLH1− sans variant"],["MSH2 c.942+3A>T","variant d'épissage récurrent (exon 5), répandu mondialement"],["MSH2 inversion exons 1–7 (« inversion de Boland »)","invisible en séquençage et en MLPA — analyse ciblée"],["EPCAM délétions 3' (dernier exons)","extinction de MSH2 en cis par méthylation"]],
 cr:["Dépistage universel : IHC des 4 protéines MMR (± MSI) sur TOUT cancer colorectal et de l'endomètre ; si perte MLH1/PMS2 → rechercher hyperméthylation du promoteur MLH1 / BRAF V600E (CCR) avant de conclure au germinal",
 "Amsterdam II : ≥ 3 apparentés avec cancer du spectre (CCR, endomètre, grêle, urothélium), sur 2 générations, dont 1 apparenté au 1er degré des 2 autres et 1 cas < 50 ans, polypose exclue",
-"Bethesda révisés : CCR < 50 ans ; CCR synchrones/métachrones ou autre tumeur du spectre ; CCR MSI-H < 60 ans ; CCR + apparenté 1er degré avec tumeur du spectre < 50 ans ; CCR + ≥ 2 apparentés avec tumeur du spectre"],
+"Pièges techniques : pseudogène PMS2CL (analyse spécifique de PMS2 par LR-PCR) ; inversion des exons 1–7 de MSH2 et délétions 3' d'EPCAM non vues en séquençage simple (MLPA/analyse ciblée) — à rechercher si IHC MSH2/MSH6− sans variant ; tumeurs « Lynch-like » : séquencer MMR tumoral (double hit somatique)","Bethesda révisés : CCR < 50 ans ; CCR synchrones/métachrones ou autre tumeur du spectre ; CCR MSI-H < 60 ans ; CCR + apparenté 1er degré avec tumeur du spectre < 50 ans ; CCR + ≥ 2 apparentés avec tumeur du spectre"],
 su:["Coloscopie avec chromoendoscopie (indigo carmin) tous les 1–2 ans : dès 20–25 ans (MLH1/MSH2), dès 30–35 ans (MSH6/PMS2)","Gastroscopie avec recherche/éradication de H. pylori (couplée aux coloscopies)","Femme : information sur les signes gynécologiques ; hystérectomie + annexectomie prophylactiques à proposer après accomplissement du projet parental (≈ 40–45 ans, selon le gène)","Pas de dépistage urinaire systématique validé (cytologie à discuter si MSH2 + ATCD familiaux urothéliaux)"],
 tt:["Tumeurs dMMR/MSI-H : immunothérapie anti-PD-1 — pembrolizumab (agnostique et 1re ligne CCR métastatique, KEYNOTE-177), dostarlimab (endomètre dMMR ; rectum dMMR néoadjuvant : réponses complètes cliniques quasi constantes, Cercek NEJM 2022), nivolumab ± ipilimumab","Chimioprévention par aspirine : CAPP2 (600 mg/j, ≈ −50 % de CCR) ; dose optimale à l'étude (CaPP3) — souvent 150–300 mg/j en pratique","Colectomie étendue (plutôt que segmentaire) à discuter en cas de CCR chez un sujet jeune (risque métachrone ≈ 36 % à 30 ans)"],
 src:["PLSD — Dominguez-Valentin, Genet Med 2020","Møller 2017","CAPP2 (Burn, Lancet)","KEYNOTE-177","NCCN Colorectal Genetics","GGC-Unicancer"]},
@@ -323,7 +444,7 @@ src:["GeneReviews : MUTYH Polyposis","Nielsen 2011","NCCN"]},
 
 {id:"pjs",nom:"Syndrome de Peutz-Jeghers",al:["PJS","lentiginose péri-orificielle"],cat:"dig",pre:"≈ 1/50 000–1/200 000",tr:"AD",
 genes:[["STK11","(LKB1) suppresseur, voie AMPK/mTOR"]],
-sp:[["Tout cancer confondu",["Côlon-rectum"],"≈ 80–90 % à 70 ans",85,"risque global très élevé, multi-organes"],
+sp:[["Tout cancer confondu",[],"≈ 80–90 % à 70 ans",85,"risque global très élevé, multi-organes"],
 ["Sein",["Sein"],"≈ 30–50 %",45,""],
 ["Côlon-rectum",["Côlon-rectum"],"≈ 39 %",39,""],
 ["Estomac",["Estomac"],"≈ 29 %",29,""],
@@ -333,7 +454,7 @@ sp:[["Tout cancer confondu",["Côlon-rectum"],"≈ 80–90 % à 70 ans",85,"risq
 ["Col utérin (adenoma malignum)",["Col utérin"],"≈ 10 %",10,"adénocarcinome à déviation minime"],
 ["Poumon",["Poumon / plèvre"],"≈ 7–15 %",10,""],
 ["Testicule (Sertoli, calcifiantes)",["Testicule"],"rare (enfant : gynécomastie)",null,""]],
-va:[],
+va:[["STK11 grandes délétions","≈ 15–30 % des cas — MLPA systématique"]],
 cr:["Clinique : lentiginose labiale/buccale + polypes hamartomateux (musculo-muqueux) du grêle ; ≥ 2 polypes PJ confirmés, ou 1 polype + lentiginose, ou 1 polype/lentiginose + ATCD familial"],
 su:["Vidéocapsule (ou entéro-IRM) + gastroscopie + coloscopie dès 8 ans, puis /2–3 ans (annuel si polypes)","Pancréas : IRM ou écho-endoscopie annuelle dès 30–35 ans","Sein : IRM annuelle dès 25–30 ans ; examen gynécologique + frottis annuels dès 25 ans","Testicules : examen ± échographie dans l'enfance"],
 tt:["Polypectomies itératives (prévention des invaginations et de la dégénérescence) ; entéroscopie double-ballon","Pas de thérapie ciblée germinale validée (inhibiteurs mTOR : essais)"],
@@ -373,10 +494,10 @@ sp:[["Sein (femme, préménopausique)",["Sein"],"≈ 55–85 % (moteur du risque
 ["Leucémies",["Sang / moelle"],"≈ 2–5 %",3,"LAL hypodiploïdes, LAM thérapie-induites"],
 ["Autres (poumon, côlon, estomac, mélanome…)",["Poumon / plèvre","Côlon-rectum","Estomac"],"accrus (risque global H ≈ 70–75 %)",null,"tumeurs multiples séquentielles fréquentes"]],
 va:[["TP53 p.Arg337His","fondateur brésilien (Sud/Sud-Est), pénétrance atténuée, corticosurrénalome pédiatrique ++"]],
-cr:["Critères de Chompret (2015) — tester TP53 si : (1) tumeur du spectre LFS (sarcome, sein, SNC, corticosurrénalome, leucémie, cancer bronchique) < 46 ans ET apparenté 1er/2e degré avec tumeur du spectre < 56 ans ou tumeurs multiples ; ou (2) tumeurs primitives multiples dont 2 du spectre, la 1re < 46 ans ; ou (3) corticosurrénalome, carcinome des plexus choroïdes ou rhabdomyosarcome anaplasique quel que soit le contexte ; ou (4) cancer du sein < 31 ans","Tester AVANT radiothérapie chez une femme jeune avec cancer du sein si critères remplis (impact thérapeutique immédiat)"],
+cr:["Critères de Chompret (2015) — tester TP53 si : (1) tumeur du spectre LFS (cancer du sein préménopausique, sarcome des tissus mous, ostéosarcome, tumeur du SNC, corticosurrénalome) < 46 ans ET apparenté 1er/2e degré avec tumeur du spectre (hors sein si le cas index a un cancer du sein) < 56 ans ou tumeurs multiples ; ou (2) tumeurs primitives multiples (hors seins multiples) dont 2 du spectre, la 1re < 46 ans ; ou (3) corticosurrénalome, carcinome des plexus choroïdes ou rhabdomyosarcome anaplasique quel que soit le contexte ; ou (4) cancer du sein < 31 ans","Tester AVANT radiothérapie chez une femme jeune avec cancer du sein si critères remplis (impact thérapeutique immédiat)","Variant TP53 de découverte fortuite à VAF basse (panel tumoral ou constitutionnel) : éliminer une hématopoïèse clonale (CHIP) ou une mosaïque avant de conclure (contrôle sur fibroblastes)","Nomenclature ERN GENTURIS 2020 : « syndrome hTP53rc » (heritable TP53-related cancer), englobant les formes atténuées"],
 su:["Protocole de type « Toronto » : IRM corps entier annuelle, IRM cérébrale annuelle, examen clinique complet /3–4 mois chez l'enfant (+ écho abdopelvienne, stéroïdes urinaires pour le corticosurrénalome), IRM mammaire annuelle dès 20 ans, coloscopie /2–5 ans dès 25 ans","Échographie mammaire/palpation entre les IRM ; éviter mammographies répétées avant 30 ans"],
 tt:["Limiter la radiothérapie et les agents génotoxiques quand une alternative existe (risque majeur de secondes tumeurs radio-induites) — mastectomie totale plutôt que traitement conservateur + RT","Pas de thérapie ciblée germinale validée"],
-src:["Bougeard, JCO 2015 (Chompret)","Villani, Lancet Oncol 2016 (Toronto)","GeneReviews : Li-Fraumeni","NCCN"]},
+src:["Bougeard, JCO 2015 (Chompret)","Frebourg, Eur J Hum Genet 2020 (ERN GENTURIS hTP53rc)","Villani, Lancet Oncol 2016 (Toronto)","GeneReviews : Li-Fraumeni","NCCN"]},
 
 {id:"cdh1",nom:"Cancer gastrique diffus héréditaire (CDH1)",al:["HDGC","cancer gastrique diffus","linite héréditaire"],cat:"dig",pre:"rare",tr:"AD",
 genes:[["CDH1","E-cadhérine ; cellules en bague à chaton"],["CTNNA1","α-caténine, phénotype similaire (données plus limitées)"]],
@@ -439,7 +560,7 @@ src:["Jaeger, Nat Genet 2012"]},
 
 {id:"prss1",nom:"Pancréatite héréditaire (PRSS1)",al:["pancréatite chronique héréditaire"],cat:"dig",pre:"rare",tr:"AD (pénétrance ≈ 80 % pour la pancréatite)",
 genes:[["PRSS1","trypsinogène cationique, gain de fonction (auto-activation)"],["SPINK1","modificateur, souvent AR/complexe"],["CTRC / CFTR","facteurs de susceptibilité"]],
-sp:[["Pancréas (adénocarcinome)",["Pancréas"],"≈ 10–40 % à 70 ans selon les séries",25,"sur pancréatite chronique évoluant depuis l'enfance ; tabac = multiplicateur majeur (risque doublé et avancé de ≈ 20 ans)"]],
+sp:[["Pancréas (adénocarcinome) — PRSS1",["Pancréas"],"≈ 10–40 % à 70 ans selon les séries",25,"sur pancréatite chronique évoluant depuis l'enfance ; tabac = multiplicateur majeur (risque doublé et avancé de ≈ 20 ans)"]],
 va:[["PRSS1 p.Arg122His","variant le plus fréquent"],["PRSS1 p.Asn29Ile","2e variant récurrent"]],
 cr:["Pancréatites aiguës récidivantes/chroniques débutant dans l'enfance ou l'adolescence, ± ATCD familiaux, sans cause toxique"],
 su:["Dépistage du cancer (type CAPS) dès 40 ans (ou 20 ans après le début de la pancréatite) : IRM et/ou écho-endoscopie annuelles — rendement limité par les remaniements chroniques","Sevrage tabac/alcool impératif ; prise en charge de l'insuffisance exocrine/endocrine"],
@@ -454,7 +575,7 @@ sp:[["Hyperparathyroïdie primaire",["Parathyroïdes"],"≈ 95–100 % à 50 ans
 ["TNE thymiques et bronchiques",["Thymus","Poumon / plèvre"],"≈ 3–8 %",5,"thymiques : hommes fumeurs, agressives"],
 ["Lésions corticosurrénaliennes",["Surrénale (cortex)"],"≈ 20–40 % (le plus souvent bénignes)",30,""],
 ["Cutané : angiofibromes, collagénomes, lipomes",["Peau"],"fréquents (aide au diagnostic)",null,""]],
-va:[],
+va:[["Pas de point chaud","variants dispersés sur tout le gène ; ≈ 1–4 % de grandes délétions → MLPA si séquençage négatif ; ≈ 10–30 % des MEN1 cliniques restent sans variant (phénocopies : CDKN1B, CDC73, CASR)"]],
 cr:["≥ 2 atteintes principales (parathyroïdes, pancréas endocrine, hypophyse) ; ou 1 atteinte + apparenté 1er degré MEN1 ; hyperparathyroïdie multiglandulaire < 30 ans ; gastrinome ou TNE pancréatiques multiples à tout âge"],
 su:["Dès l'enfance (≈ 5–8 ans) : calcémie + PTH annuelles ; glycémie/insuline à jeun (insulinome) dès 5 ans ; gastrine dès 20 ans","IRM hypophysaire /3–5 ans (+ prolactine, IGF-1 annuelles) ; IRM/écho-endoscopie pancréatique annuelle à /2 ans ; TDM/IRM thoracique /1–2 ans"],
 tt:["Parathyroïdectomie subtotale (3,5 glandes) ± thymectomie prophylactique par la même voie","Gastrinome : IPP forte dose ; TNE pancréatiques : chirurgie généralement si > 2 cm ; analogues de la somatostatine, évérolimus/sunitinib aux stades avancés"],
@@ -466,7 +587,7 @@ sp:[["Carcinome médullaire de la thyroïde (CMT)",["Thyroïde"],"≈ 95–100 %
 ["Phéochromocytome",["Phéochromocytome / paragangliome"],"≈ 50 % (codon 634 et M918T)",50,"souvent bilatéral, rarement malin ; à dépister AVANT toute chirurgie/grossesse"],
 ["Hyperparathyroïdie (MEN2A)",["Parathyroïdes"],"≈ 10–25 % (codon 634)",18,"généralement modérée"],
 ["MEN2B : ganglioneuromatose digestive et muqueuse",["Intestin grêle / duodénum"],"quasi constante",null,"+ morphotype marfanoïde, névromes muqueux (lèvres, langue), larmes absentes"]],
-va:[["RET p.Met918Thr","MEN2B (> 95 % des cas) — risque ATA « highest »"],["RET codon 634 (p.Cys634Arg/Tyr/…)","MEN2A classique — risque ATA « high »"],["RET exon 10 (codons 609–620)","MEN2A ± maladie de Hirschsprung"]],
+va:[["RET p.Met918Thr","MEN2B (> 95 % des cas) — risque ATA « highest »"],["RET codon 634 (p.Cys634Arg/Tyr/…)","MEN2A classique — risque ATA « high »"],["RET exon 10 (codons 609–620)","MEN2A ± maladie de Hirschsprung"],["RET p.Ala883Phe","MEN2B (2e cause) — risque ATA « high »"],["RET p.Val804Met / p.Val804Leu","risque ATA « modéré », pénétrance tardive et incomplète"]],
 cr:["TOUT carcinome médullaire de la thyroïde → recherche RET germinale (≈ 25 % héréditaires)","Phéochromocytome bilatéral/précoce, lichen amyloïde interscapulaire, Hirschsprung familial : y penser"],
 su:["Calcitonine + échographie thyroïdienne dès le plus jeune âge tant que la thyroïde est en place","Métanéphrines plasmatiques/urinaires annuelles dès 11 ans (risque « highest/high ») ou 16 ans (modéré) ; calcémie-PTH annuelles (MEN2A)"],
 tt:["Thyroïdectomie prophylactique (ATA 2015) : p.Met918Thr → avant 6 mois ; codon 634 / p.Ala883Phe → avant 5 ans (guidée par la calcitonine) ; risque modéré → dès élévation de la calcitonine ou selon préférence familiale","CMT avancé RET-muté : selpercatinib, pralsétinib (inhibiteurs sélectifs de RET) ; vandétanib, cabozantinib","Phéochromocytome : surrénalectomie (préparation alpha-bloquante), épargne corticale si bilatéral"],
@@ -515,13 +636,22 @@ genes:[["SDHB","PGL4 — abdomino-thoraciques, RISQUE MALIN le plus élevé"],["
 sp:[["Paragangliomes abdomino-thoraciques — SDHB",["Phéochromocytome / paragangliome"],"pénétrance ≈ 25–50 % à 60 ans ; malignité ≈ 30–50 %",40,"tout PGL métastatique doit faire évoquer SDHB"],
 ["Paragangliomes tête et cou — SDHD/SDHC",["Phéochromocytome / paragangliome","ORL / tête et cou"],"pénétrance élevée si transmission paternelle (SDHD ≈ 80–90 %)",85,"glomus carotidien, jugulo-tympanique ; souvent non sécrétants, multifocaux"],
 ["Phéochromocytome — TMEM127/MAX/SDHB",["Phéochromocytome / paragangliome"],"variable selon le gène",null,"bilatéralité fréquente (TMEM127, MAX)"],
-["GIST SDH-déficients",["Estomac"],"rares (SDHA ++, dyade de Carney-Stratakis)",null,"gastriques, multifocaux, sujets jeunes, IHC SDHB négative"],
+["GIST SDH-déficients — SDHA/SDHB/SDHC/SDHD",["Estomac"],"rares (SDHA ++, dyade de Carney-Stratakis)",null,"gastriques, multifocaux, sujets jeunes, IHC SDHB négative"],
 ["Carcinome rénal — SDHB",["Rein"],"≈ 5 %",5,""]],
-va:[["SDHD p.Asp92Tyr","fondateur néerlandais"]],
+va:[["SDHD p.Asp92Tyr","fondateur néerlandais"],["SDHB : grandes délétions","≈ 10 % des variants SDHB — MLPA systématique"]],
 cr:["TOUT phéochromocytome ou paragangliome justifie une analyse germinale en panel (VHL, RET, NF1, SDHx, TMEM127, MAX…) quel que soit l'âge","IHC SDHB tumorale négative = argument fort pour une mutation SDHx"],
 su:["Métanéphrines plasmatiques/urinaires annuelles dès 6–10 ans (SDHB) ; IRM corps entier (base du crâne → pelvis) tous les 2–3 ans","Empreinte SDHD : surveiller les porteurs ayant hérité de l'allèle PATERNEL (les transmetteurs maternels restent transmetteurs)"],
 tt:["Chirurgie après préparation alpha-bloquante ; PGL malins : 177Lu-DOTATATE, MIBG thérapeutique, sunitinib ; GIST SDH-déficients : imatinib INEFFICACE → sunitinib/régorafénib","Éviter l'hypoxie chronique prolongée (haute altitude) — facteur de croissance discuté des PGL tête et cou"],
 src:["Lenders, JCEM 2014 (Endocrine Society)","GeneReviews : Hereditary PGL-PCC","NGS in PPGL consensus 2017"]},
+{id:"aip",nom:"Adénomes hypophysaires familiaux isolés (AIP)",al:["FIPA","gigantisme familial","X-LAG","GPR101"],cat:"endo",pre:"AIP : ≈ 20 % des familles FIPA ; ≈ 30 % des gigantismes pédiatriques",tr:"AD (pénétrance ≈ 20–30 %)",
+genes:[["AIP","protéine d'interaction avec le récepteur aryl-hydrocarbone ; adénomes somatotropes/mixtes précoces, peu sensibles aux analogues de la somatostatine"],["GPR101","duplication Xq26.3 (X-LAG) : gigantisme du nourrisson (< 5 ans), souvent de novo ou mosaïque"]],
+sp:[["Adénomes hypophysaires — AIP",["Hypophyse"],"≈ 20–30 % des porteurs",23,"somatotropes (gigantisme/acromégalie) > lactotropes ; macroadénomes, âge médian ≈ 20 ans"],
+["Adénomes somatotropes du nourrisson — GPR101",["Hypophyse"],"quasi constant (X-LAG)",null,"croissance accélérée dès la 1re année de vie"]],
+va:[["AIP p.Arg304*","fondateur irlandais (« géant irlandais » Charles Byrne)"]],
+cr:["Adénome hypophysaire < 30 ans (macroadénome) ou < 18 ans (tout adénome) ; gigantisme ; ≥ 2 adénomes hypophysaires familiaux (FIPA) ; GPR101 (CGH/ACPA) si gigantisme débutant avant 5 ans"],
+su:["Porteurs AIP (enfance → ≈ 30 ans) : examen clinique (courbe de croissance, signes d'acromégalie), IGF-1 et prolactine annuels dès ≈ 4 ans ; IRM hypophysaire initiale vers 10 ans puis /5 ans"],
+tt:["Chirurgie transsphénoïdale ; résistance fréquente aux analogues de la somatostatine de 1re génération → pasiréotide, pegvisomant"],
+src:["Daly 2006 / Beckers 2013 (FIPA)","Williams 2014 (surveillance AIP)","Trivellin, NEJM 2014 (X-LAG)"]},
 {id:"vhl",nom:"Maladie de von Hippel-Lindau (VHL)",al:["VHL","von Hippel Lindau"],cat:"uro",pre:"≈ 1/36 000",tr:"AD (≈ 20 % de novo)",
 genes:[["VHL","dégradation de HIF ; type 1 (tronquants/délétions : pas de phéo) vs type 2 (faux-sens : phéo ; 2A phéo sans CCR, 2B phéo + CCR, 2C phéo isolé)"]],
 sp:[["Hémangioblastomes du SNC",["Cerveau / SNC"],"≈ 60–80 %",70,"cervelet, tronc, moelle ; multiples, d'évolution saltatoire"],
@@ -531,7 +661,7 @@ sp:[["Hémangioblastomes du SNC",["Cerveau / SNC"],"≈ 60–80 %",70,"cervelet,
 ["Phéochromocytome (type 2)",["Phéochromocytome / paragangliome"],"≈ 10–25 %",18,"souvent bilatéral, noradrénergique, sujet jeune"],
 ["Tumeur du sac endolymphatique",["ORL / tête et cou"],"≈ 10–16 %",12,"surdité, acouphènes, vertiges — IRM ciblée si symptômes"],
 ["Cystadénomes de l'épididyme / ligament large",["Testicule"],"fréquents, bénins",null,""]],
-va:[["VHL p.Tyr98His (« Forêt-Noire »)","fondateur, phénotype 2A (phéo prédominant)"]],
+va:[["VHL p.Tyr98His (« Forêt-Noire »)","fondateur, phénotype 2A (phéo prédominant)"],["VHL codon 167 (p.Arg167Trp/Gln)","point chaud — phénotype 2B (phéo + CCR)"],["VHL p.Arg200Trp","HOMOZYGOTE → polyglobulie de Chuvash (sans tumeurs VHL) ; hétérozygote : pas de maladie de VHL"]],
 cr:["Hémangioblastome + autre lésion du spectre ; ou hémangioblastome/CCR/phéo + apparenté atteint ; hémangioblastome rétinien ou du SNC isolé du sujet jeune → test","Tout phéochromocytome (panel incluant VHL)"],
 su:["Dès 1 an : examen ophtalmologique annuel ; dès 5 ans : métanéphrines annuelles + audiométrie ; dès 10–15 ans : IRM cérébrale et médullaire /2 ans ; dès 15–20 ans : IRM abdominale annuelle (rein, pancréas, surrénales)","Grossesse : surveiller (croissance des hémangioblastomes possible), dépister le phéo avant l'accouchement"],
 tt:["Belzutifan (inhibiteur HIF-2α) : approuvé (FDA 2021) pour CCR, hémangioblastomes du SNC et TNE pancréatiques associés au VHL ne nécessitant pas de chirurgie immédiate","Rein : chirurgie d'épargne néphronique, déclenchée classiquement au seuil de 3 cm de la plus grosse tumeur","Hémangioblastomes symptomatiques : chirurgie ± radiochirurgie ; rétine : laser/cryothérapie"],
@@ -585,11 +715,24 @@ src:["GeneReviews : BAP1-TPDS","Walpole 2018 (registre international)"]},
 genes:[["CDKN2A","p16INK4a/p14ARF ; risque mélanome + pancréas"],["CDK4","codon 24 (p.Arg24Cys/His) — phénocopie CDKN2A, très rare"],["MITF","p.Glu318Lys : risque modéré mélanome + CCR"],["BAP1 / POT1 / TERT (promoteur)","familles rares — voir fiches/panels dédiés"]],
 sp:[["Mélanome cutané",["Peau"],"≈ 30–70 % à 80 ans (selon latitude/phototype)",50,"multiples primitifs, âge précoce ; pénétrance plus faible en zone peu ensoleillée"],
 ["Pancréas — CDKN2A",["Pancréas"],"≈ 15–20 %",17,"surtout familles p16-Leiden ; un des risques pancréatiques héréditaires majeurs"]],
-va:[["CDKN2A c.225_243del (p16-Leiden)","fondateur néerlandais — risque pancréatique marqué"],["CDKN2A p.Gly101Trp","fondateur ligure (Italie/France du Sud)"],["MITF p.Glu318Lys","variant de susceptibilité modérée (mélanome, CCR)"]],
+va:[["CDKN2A c.225_243del (p16-Leiden)","fondateur néerlandais — risque pancréatique marqué"],["CDKN2A p.Gly101Trp","fondateur ligure (Italie/France du Sud)"],["MITF p.Glu318Lys","variant de susceptibilité modérée (mélanome, CCR)"],["CDK4 p.Arg24Cys / p.Arg24His","codon 24 — rares familles"],["TERT promoteur c.-57T>G","famille princeps allemande (Horn 2013), exceptionnel"]],
 cr:["≥ 3 mélanomes dans une branche familiale (ou 2 + pancréas) ; mélanomes primitifs multiples chez un même individu ; mélanome + cancer du pancréas familial"],
 su:["Dermatoscopie /6 mois + photographie corporelle totale, dès l'adolescence ; photoprotection stricte","Pancréas (CDKN2A) : IRM et/ou écho-endoscopie annuelle dès 40 ans (protocole CAPS)"],
 tt:["Pas de spécificité germinale du traitement du mélanome (immunothérapie/thérapies ciblées selon BRAF somatique)"],
 src:["GeneReviews : Melanoma susceptibility","Vasen 2000 (p16-Leiden pancréas)","CAPS Gut 2020"]},
+
+{id:"pot1",nom:"Prédisposition tumorale POT1",al:["POT1-TPD","télomères longs","mélanome-gliome-angiosarcome"],cat:"peau",pre:"rare",tr:"AD (pénétrance incomplète)",
+genes:[["POT1","shelterine (protection des télomères) ; perte de fonction → télomères LONGS (à l'inverse des téloméropathies)"],["ACD / TERF2IP","autres gènes de la shelterine — rares familles de mélanome"]],
+sp:[["Mélanome cutané (souvent multiples)",["Peau"],"élevé, mal quantifié",null,""],
+["Gliomes",["Cerveau / SNC"],"accru",null,""],
+["Leucémie lymphoïde chronique",["Sang / moelle"],"accru",null,""],
+["Angiosarcome (cardiaque ++)",["Cœur","Tissus mous / sarcomes"],"rare mais évocateur",null,"angiosarcome cardiaque familial = drapeau rouge"],
+["Thyroïde, sarcomes, autres",["Thyroïde","Tissus mous / sarcomes"],"rapportés",null,""]],
+va:[],
+cr:["Mélanomes familiaux CDKN2A/CDK4-négatifs, surtout avec gliome, LLC, angiosarcome ou cancer thyroïdien dans la famille ; angiosarcome cardiaque ; tumeurs primitives multiples"],
+su:["Examen dermatologique /6–12 mois + photoprotection ; pas de protocole consensuel pour les autres organes : vigilance clinique, imagerie au cas par cas"],
+tt:["Pas de spécificité thérapeutique germinale"],
+src:["Henry 2022 (GeneReviews : POT1 Tumor Predisposition)","Robles-Espinoza, Nat Genet 2014","Calvete 2015 (angiosarcome cardiaque)"]},
 
 {id:"gorlin",nom:"Syndrome de Gorlin (PTCH1/SUFU)",al:["naevomatose basocellulaire","Gorlin-Goltz","NBCCS"],cat:"peau",pre:"≈ 1/31 000–1/57 000",tr:"AD (20–30 % de novo)",
 genes:[["PTCH1","récepteur de la voie Sonic Hedgehog"],["SUFU","≈ 5 % des cas — risque de médulloblastome nettement plus élevé, pas de kystes odontogéniques"]],
@@ -624,8 +767,8 @@ sp:[["Tumeurs malignes des gaines nerveuses (MPNST)",["Tissus mous / sarcomes"],
 ["GIST",["Estomac","Intestin grêle / duodénum"],"≈ 5–7 % (souvent multiples, grêle)",6,"KIT/PDGFRA sauvages → imatinib peu efficace"],
 ["Leucémie myélomonocytaire juvénile (JMML)",["Sang / moelle"],"rare (enfant, risque ×200–500)",null,"+ xanthogranulomes juvéniles"],
 ["Tumeurs glomiques digitales",["Peau"],"fréquentes chez l'adulte (douleurs unguéales)",null,""]],
-va:[],
-cr:["Critères révisés 2021 (2 requis) : ≥ 6 taches café-au-lait ; lentigines axillaires/inguinales ; ≥ 2 neurofibromes ou 1 plexiforme ; gliome optique ; ≥ 2 nodules de Lisch (ou 2 anomalies choroïdiennes) ; lésion osseuse caractéristique ; variant NF1 pathogène ; parent atteint"],
+va:[["NF1 c.2970_2972del (p.Met992del)","phénotype pigmentaire SANS neurofibromes cutanés ni plexiformes symptomatiques"],["NF1 codon 1809 (p.Arg1809…)","faux-sens : tableau Noonan-like, pas de neurofibromes"],["NF1 codons 844–848 (faux-sens)","phénotype SÉVÈRE : plexiformes, gliomes symptomatiques, MPNST"],["Microdélétion 17q11.2 (≈ 5–10 %)","dysmorphie, DI, neurofibromes précoces, risque MPNST ×2"]],
+cr:["Critères révisés 2021 (2 requis) : ≥ 6 taches café-au-lait ; lentigines axillaires/inguinales ; ≥ 2 neurofibromes ou 1 plexiforme ; gliome optique ; ≥ 2 nodules de Lisch (ou 2 anomalies choroïdiennes) ; lésion osseuse caractéristique ; variant NF1 pathogène ; parent atteint","Diagnostics différentiels des taches café-au-lait isolées : syndrome de Legius (SPRED1, sans neurofibromes ni risque tumoral notable), CMMRD (fiche dédiée), RASopathies"],
 su:["Examen clinique + ophtalmologique annuel (enfance) ; TA annuelle ; IRM mammaire annuelle dès 30 ans (femmes) ; IRM corps entier à la transition adulte pour cartographier les plexiformes (option) ; vigilance MPNST à vie","Métanéphrines avant chirurgie ou grossesse, ou si HTA"],
 tt:["Neurofibromes plexiformes inopérables symptomatiques : sélumétinib (enfant, FDA 2020) ; mirdamétinib (approbation FDA 2025, enfant et adulte) — inhibiteurs de MEK","MPNST : chirurgie R0 (chimio/RT : bénéfice limité) ; GIST NF1 : chirurgie (imatinib inefficace — KIT sauvage)"],
 src:["Legius & Messiaen 2021 (critères révisés)","GeneReviews : NF1","Uusitalo 2016 (risque sein)","FDA sélumétinib/mirdamétinib"]},
@@ -670,7 +813,7 @@ genes:[["RB1","1er gène suppresseur décrit (Knudson, « two-hit ») ; formes b
 sp:[["Rétinoblastome",["Œil"],"pénétrance ≈ 90 % ; bilatéral/multifocal, < 2 ans",90,"leucocorie, strabisme = signes d'alerte"],
 ["Pinéaloblastome (« rétinoblastome trilatéral »)",["Cerveau / SNC"],"≈ 5 %",5,"pronostic sombre — IRM au moindre signe"],
 ["Seconds cancers (ostéosarcome, sarcomes, mélanome)",["Os","Tissus mous / sarcomes","Peau"],"≈ 30–40 % à 50 ans (formes germinales)",35,"risque MAJORÉ par la radiothérapie externe reçue"]],
-va:[],
+va:[["RB1 c.1981C>T (p.Arg661Trp)","faible pénétrance (≈ 40 %), formes unilatérales/familiales atténuées"],["RB1 variants du promoteur / épissage en phase","pénétrance incomplète"]],
 cr:["Tout rétinoblastome bilatéral ou multifocal → germinal quasi certain ; unilatéral : ≈ 15 % germinaux → test systématique ; dépistage présymptomatique de la fratrie/descendance (FO sous AG répétés dès la naissance si statut inconnu)"],
 su:["Porteurs : fond d'œil (sous AG) toutes les 3–4 semaines jusqu'à 6 mois puis espacé jusqu'à 5 ans","Après guérison : éducation aux signes de sarcome, éviter irradiations inutiles ; examen dermato ; pas de protocole validé de dépistage des seconds cancers (IRM corps entier discutée)"],
 tt:["ÉVITER la radiothérapie externe (explosion du risque de seconds cancers en territoire irradié) → chimiothérapie intra-artérielle/intravitréenne, thermochimiothérapie, cryothérapie, laser","Énucléation si nécessaire ; chimio systémique selon stade"],
@@ -693,7 +836,7 @@ sp:[["Pléuropneumoblastome (PPB)",["Poumon / plèvre"],"≈ 3–5 % (< 6 ans)",
 ["Néphrome kystique / sarcome anaplasique du rein",["Rein"],"≈ 1 % (< 4 ans)",null,""],
 ["Rhabdomyosarcome embryonnaire du col utérin (botryoïde)",["Col utérin"],"rare",null,""],
 ["Blastome hypophysaire / pinéoblastome / médulloépithéliome ciliaire",["Hypophyse","Cerveau / SNC","Œil"],"rares mais quasi pathognomoniques",null,""]],
-va:[],
+va:[["DICER1 points chauds RNase IIIb (p.Glu1705, p.Asp1709, p.Gly1809, p.Asp1810, p.Glu1813)","2e événement SOMATIQUE dans la tumeur — non germinal ; le variant germinal est en règle tronquant"]],
 cr:["PPB, néphrome kystique, SLCT, blastome hypophysaire, médulloépithéliome ciliaire, goitre multinodulaire familial/précoce, rhabdomyosarcome du col → test DICER1"],
 su:["TDM thoracique basse dose vers 3–6 mois puis radio/TDM selon protocole jusqu'à ≈ 8 ans (PPB) ; échographie abdomino-pelvienne /6–12 mois jusqu'à 8–12 ans puis annuelle (rein, ovaire) ; échographie thyroïdienne dès 8 ans puis /2–3 ans"],
 tt:["Chirurgie des tumeurs localisées ; PPB type I de découverte précoce = pronostic bien meilleur (intérêt du dépistage)"],
@@ -704,7 +847,7 @@ genes:[["WT1","facteur de transcription du développement rénal et gonadique ; 
 sp:[["Néphroblastome (tumeur de Wilms) — Denys-Drash",["Rein"],"> 90 %",92,"précoce, souvent bilatéral ; + néphropathie (sclérose mésangiale diffuse) + anomalies du développement sexuel 46,XY"],
 ["Néphroblastome — WAGR",["Rein"],"≈ 45–60 %",50,"Wilms + Aniridie + anomalies Génito-urinaires + Retard (délétion 11p13) ; insuffisance rénale tardive fréquente"],
 ["Gonadoblastome — Frasier",["Testicule","Ovaire"],"≈ 40–60 % (dysgénésie gonadique 46,XY)",50,"+ néphropathie (HSF) d'évolution lente ; Wilms rare"]],
-va:[],
+va:[["WT1 p.Arg394Trp (exon 9)","faux-sens le plus fréquent du Denys-Drash"],["WT1 c.1432+4C>T / c.1432+5G>A (intron 9)","Frasier : déséquilibre des isoformes +KTS/−KTS"]],
 cr:["Aniridie sporadique du nourrisson → FISH/CGH 11p13 en urgence (risque Wilms) ; Wilms bilatéral ou + anomalie génito-urinaire/néphropathie → WT1 ; dysgénésie gonadique 46,XY + protéinurie → Frasier"],
 su:["Échographie rénale toutes les 3–4 mois jusqu'à 7 ans (porteurs à risque de Wilms) ; suivi néphrologique (protéinurie, HTA)","Gonadectomie prophylactique des gonades dysgénétiques 46,XY (risque de gonadoblastome)"],
 tt:["Wilms : protocoles SIOP/COG ; chirurgie d'épargne néphronique si bilatéral ; anticiper l'insuffisance rénale (Denys-Drash, WAGR)"],
@@ -735,8 +878,8 @@ genes:[["FANCA","≈ 60–65 % des cas"],["FANCC",""],["FANCG",""],["FANCD1 (BRC
 sp:[["Insuffisance médullaire",["Sang / moelle"],"≈ 80–90 % à 40 ans",85,"cytopénies dès 5–10 ans ; macrocytose, HbF élevée"],
 ["SMD / LAM",["Sang / moelle"],"≈ 10–30 % (risque ×500–800)",20,"pic adolescent/adulte jeune ; clones 3q+, 7-"],
 ["Carcinomes épidermoïdes (tête-cou, œsophage, anogénital)",["ORL / tête et cou","Estomac"],"risque ×200–700, dès 20–30 ans (++ après greffe)",30,"HPV-associés en partie ; dépistage ORL rapproché"],
-["FANCD1/N : médulloblastome, Wilms, LAM du petit enfant",["Cerveau / SNC","Rein","Sang / moelle"],"très élevé avant 6 ans (BRCA2/PALB2 bialléliques)",90,"phénotype tumoral distinct et redoutable"]],
-va:[["FANCC c.456+4A>T (IVS4)","fondateur ashkénaze"],["FANCA délétions exoniques récurrentes","fréquentes (MLPA nécessaire)"]],
+["Médulloblastome, Wilms, LAM du petit enfant — BRCA2/PALB2 (FANCD1/N)",["Cerveau / SNC","Rein","Sang / moelle"],"très élevé avant 6 ans (BRCA2/PALB2 bialléliques)",90,"phénotype tumoral distinct et redoutable"]],
+va:[["FANCC c.456+4A>T (IVS4)","fondateur ashkénaze"],["FANCA délétions exoniques récurrentes","fréquentes (MLPA nécessaire)"],["FANCA c.295C>T (p.Gln99*)","fondateur gitan espagnol"]],
 cr:["Diagnostic : test de cassures chromosomiques à la mitomycine C / DEB sur lymphocytes (ton domaine cyto) — à demander devant : cytopénie inexpliquée de l'enfant, malformations radiales/rénales, taches café-au-lait, petite taille, carcinome épidermoïde du sujet jeune, LAM/SMD précoce, hypersensibilité majeure à la chimio","Attention aux faux négatifs par mosaïcisme somatique réverse (→ test sur fibroblastes)"],
 su:["NFS + myélogramme/cytogénétique médullaire annuels ; examen ORL + dermato tous les 6 mois dès 10–15 ans (à vie, surtout post-greffe) ; gynéco annuel (HPV, vaccination ++)"],
 tt:["HYPERSENSIBILITÉ aux agents pontants (cisplatine, mitomycine) et à la radiothérapie → conditionnements de greffe ATTÉNUÉS (fludarabine, faibles doses), chimio adaptée","Allogreffe = traitement curatif de l'atteinte médullaire ; androgènes en attente ; exclure la maladie chez tout donneur intrafamilial"],
@@ -776,7 +919,7 @@ genes:[["WRN","hélicase RecQ"]],
 sp:[["Cancers de la thyroïde (folliculaire ++)",["Thyroïde"],"parmi les plus fréquents du syndrome",null,"spectre inhabituel, non épithélial-dominant"],
 ["Mélanomes (acraux et muqueux)",["Peau"],"sur-représentés",null,"localisations atypiques évocatrices"],
 ["Sarcomes, ostéosarcome, méningiomes, hémopathies",["Tissus mous / sarcomes","Os","Cerveau / SNC","Sang / moelle"],"accrus (risque global ×2–10 ; tumeurs multiples 20 %)",null,""]],
-va:[],
+va:[["WRN c.3139-1G>C","allèle majoritaire au Japon"]],
 cr:["Vieillissement prématuré débutant APRÈS la puberté : cataracte bilatérale précoce, peau sclérodermiforme, ulcères de jambe, diabète, athérome précoce, petite taille, voix aiguë"],
 su:["Dermato + thyroïde régulières ; bilan métabolique/cardiovasculaire annuel ; vigilance sarcome"],
 tt:["Prise en charge métabolique et vasculaire ; chirurgie prudente (cicatrisation médiocre)"],
@@ -808,7 +951,7 @@ src:["GeneReviews : Dyskeratosis Congenita / TBD","Alter 2009 (cancer)","Townsle
 genes:[["CEBPA","LAM à pénétrance très élevée (souvent < 30 ans), pronostic relativement favorable mais « rechutes » = nouvelles leucémies"],["RUNX1","thrombopénie familiale avec plaquettes dysfonctionnelles → SMD/LAM ≈ 35–45 %"],["DDX41","SMD/LAM TARDIVES (> 60 ans, H > F) — y penser même sans histoire familiale ; 2e hit somatique fréquent p.Arg525His"],["GATA2","MonoMAC : monocytopénie, infections à mycobactéries atypiques/HPV, lymphœdème → SMD/LAM ≈ 75 % à 40 ans"],["ANKRD26","thrombopénie 2 ; LAM ≈ 5–10 %"],["ETV6","thrombopénie 5 ; LAL surtout"],["SAMD9/SAMD9L","monosomie 7 pédiatrique, syndromes MIRAGE/ataxie-pancytopénie"]],
 sp:[["LAM / SMD",["Sang / moelle"],"CEBPA > 80 % ; GATA2 ≈ 75 % ; RUNX1 35–45 % ; DDX41 ≈ 30–50 % (tardif) ; ANKRD26 ≈ 5–10 %",60,"selon le gène — voir détail"],
 ["LAL — ETV6, PAX5, IKZF1",["Sang / moelle"],"accru",null,""]],
-va:[["DDX41 p.Asp140Glyfs* et p.Met1? (start-loss)","germinaux récurrents ; hit somatique p.Arg525His"],["GATA2 : variants nuls et faux-sens ZF2","+ délétions — MLPA utile"]],
+va:[["DDX41 p.Asp140Glyfs* et p.Met1? (start-loss)","germinaux récurrents ; hit somatique p.Arg525His"],["GATA2 : variants nuls et faux-sens ZF2","+ délétions — MLPA utile"],["CEBPA variants N-terminaux (germinaux)","+ 2e variant C-terminal (bZIP) somatique à la leucémie"]],
 cr:["Tester si : LAM/SMD + thrombopénie personnelle/familiale ancienne, ≥ 2 hémopathies myéloïdes familiales, LAM CEBPA double-mutée (vérifier le caractère germinal !), monosomie 7 du sujet jeune, infections MonoMAC, LAM du sujet âgé avec variant DDX41 à VAF ≈ 50 %","Séquencer sur tissu NON hématopoïétique (fibroblastes cutanés) pour confirmer le caractère germinal"],
 su:["NFS /6–12 mois + myélogramme avec cytogénétique si anomalie ; GATA2 : discussion de greffe PRÉEMPTIVE avant transformation ; suivi immuno-infectieux (GATA2)"],
 tt:["RÈGLE D'OR : exclure le variant familial chez tout donneur apparenté avant allogreffe (échec de greffe, LAM du donneur)","GATA2/RUNX1 : allogreffe précoce à discuter ; DDX41 : sensibilité rapportée au lénalidomide/azacitidine (données émergentes)"],
@@ -851,9 +994,9 @@ src:["Yang 2009 (TBXT)","GeneReviews"]},
 
 {id:"rasopathies",nom:"RASopathies à risque tumoral (Costello, Noonan, CBL)",al:["Costello","Noonan","HRAS","PTPN11","JMML","LMMJ"],cat:"ped",pre:"Noonan ≈ 1/1 000–2 500 ; Costello très rare",tr:"AD (souvent de novo)",
 genes:[["HRAS","syndrome de Costello — le risque tumoral le plus élevé des RASopathies (≈ 15 %)"],["PTPN11","Noonan (≈ 50 %) ; certains variants → LMMJ/troubles myéloprolifératifs"],["CBL","syndrome Noonan-like : LMMJ parfois spontanément régressive"],["KRAS / RAF1 / SOS1 / autres","risque tumoral globalement faible"]],
-sp:[["Rhabdomyosarcome embryonnaire — Costello",["Tissus mous / sarcomes"],"≈ 10–15 %",12,"abdomen/pelvis, petite enfance"],
-["Neuroblastome — Costello",["Surrénale (cortex)"],"≈ 3–5 %",4,""],
-["Carcinome urothélial de vessie — Costello",["Voies urinaires / vessie"],"≈ 5–10 % (adolescent/adulte jeune — âge inhabituel)",7,""],
+sp:[["Rhabdomyosarcome embryonnaire — Costello (HRAS)",["Tissus mous / sarcomes"],"≈ 10–15 %",12,"abdomen/pelvis, petite enfance"],
+["Neuroblastome — Costello (HRAS)",["Surrénale (cortex)"],"≈ 3–5 %",4,""],
+["Carcinome urothélial de vessie — Costello (HRAS)",["Voies urinaires / vessie"],"≈ 5–10 % (adolescent/adulte jeune — âge inhabituel)",7,""],
 ["LMMJ / syndromes myéloprolifératifs — Noonan (PTPN11, CBL)",["Sang / moelle"],"rare (formes parfois transitoires)",null,"distinguer des LMMJ sporadiques agressives"]],
 va:[["HRAS p.Gly12Ser","variant majoritaire de Costello"]],
 cr:["Costello : RCIU paradoxal avec macrosomie relative, peau redondante, papillomes périnasaux, cardiopathie (CMH), déficience intellectuelle ; Noonan : dysmorphie, cardiopathie (sténose pulmonaire), petite taille"],
@@ -889,28 +1032,192 @@ su:["Pas de protocole consensuel (données récentes) ; information familiale"],
 tt:["Traitement standard du médulloblastome ; l'identification germinale modifie surtout le conseil familial"],
 src:["Waszak, Nature 2020","Recommandations SIOPE germline"]}
 ];
+/* ---------- compléments : population générale, conseil génétique, signes cliniques ---------- */
+/* Risque vie entière approximatif en population générale (SEER 2017–2019, arrondi) — repère visuel sur les barres.
+   Appliqué seulement aux lignes dont l'intitulé correspond au cancer « classique » de l'organe. */
+const POP=[
+[/^Sein \(homme\)/,0.1,"cancer du sein chez l'homme"],
+[/^Sein lobulaire/,null,""],
+[/^Sein( |$)/,12.9,"cancer du sein (femme)"],
+[/^Ovaire( —|$)/,1.1,"cancer de l'ovaire"],
+[/^Endomètre( —|$)/,3.1,"cancer de l'endomètre"],
+[/^Côlon-rectum/,4.1,"cancer colorectal"],
+[/^Estomac( —|$)/,0.8,"cancer de l'estomac"],
+[/^Pancréas( —|$| \(adéno| \/)/,1.7,"cancer du pancréas"],
+[/^Prostate/,12.9,"cancer de la prostate"],
+[/^Mélanome( —| cutané|$)/,2.1,"mélanome cutané"],
+[/^(Carcinome rénal|Tumeurs rénales|Rein$)/,1.7,"cancer du rein"],
+[/^Thyroïde$/,1.2,"cancer de la thyroïde"],
+[/^Intestin grêle$/,0.3,"cancer de l'intestin grêle"]];
+function popFor(name){for(const p of POP){if(p[0].test(name)) return p[1]==null?null:{v:p[1],l:p[2]};} return null;}
+
+/* Phénotype en cas d'atteinte biallélique (conseil reproductif : analyse du conjoint) */
+const BIAL={
+BRCA2:"anémie de Fanconi D1 (tumeurs embryonnaires et LAM du jeune enfant)",
+PALB2:"anémie de Fanconi N (phénotype sévère proche de D1)",
+BRIP1:"anémie de Fanconi J",
+RAD51C:"anémie de Fanconi O",
+BRCA1:"anémie de Fanconi S (exceptionnelle)",
+ATM:"ataxie-télangiectasie",
+MLH1:"déficience MMR constitutionnelle (CMMRD)",MSH2:"déficience MMR constitutionnelle (CMMRD)",MSH6:"déficience MMR constitutionnelle (CMMRD)",PMS2:"déficience MMR constitutionnelle (CMMRD)",
+NBN:"syndrome de Nijmegen",
+FH:"acidurie fumarique (encéphalopathie sévère)",
+VHL:"polyglobulie de Chuvash (p.Arg200Trp homozygote, sans tumeurs VHL)",
+SDHA:"syndrome de Leigh / déficit en complexe II"};
+const BIAL_LINK={ATM:"at",MLH1:"cmmrd",MSH2:"cmmrd",MSH6:"cmmrd",PMS2:"cmmrd",NBN:"nbs",BRCA2:"fanconi",PALB2:"fanconi",BRIP1:"fanconi",RAD51C:"fanconi",BRCA1:"fanconi"};
+
+/* Âge du test présymptomatique chez l'enfant + points de conseil propres au syndrome */
+const MAJ="Majorité (18 ans) — pas de bénéfice médical direct avant l'âge adulte";
+const CG={
+hboc:["Majorité (18 ans) — aucun dépistage avant 25–30 ans",["Hommes porteurs : même risque de transmission (50 %) — penser aux filles ET aux fils","Un apparenté non porteur du variant familial est un « vrai négatif » : retour au risque de la population (hors autre histoire familiale)","Estimation individuelle intégrant l'histoire familiale : CanRisk (BOADICEA)"]],
+palb2:[MAJ,["Estimation individuelle : CanRisk (BOADICEA intègre PALB2)"]],
+atm:[MAJ,["Risque très dépendant de l'histoire familiale : CanRisk (BOADICEA)"]],
+chek2:[MAJ,["Risque très dépendant de l'histoire familiale : CanRisk (BOADICEA) ; un apparenté non porteur garde un risque lié à l'histoire familiale"]],
+rad51:[MAJ,[]],
+lynch:["Majorité (18 ans) — 1re coloscopie à 20–25 ans (MLH1/MSH2)",["Femmes : aborder dès le résultat le risque endomètre/ovaire et le calendrier de la chirurgie prophylactique (projet parental)","Prévention par aspirine à discuter dès la confirmation","Risques par gène et par âge : base PLSD (plsd.eu)"]],
+cmmrd:["Fratrie : dès la naissance (protocole pédiatrique précoce)",["Les deux parents sont porteurs d'un Lynch hétérozygote : bilan et surveillance Lynch pour eux et leur branche"]],
+fap:["≈ 10–12 ans (avant la 1re endoscopie) ; plus tôt si dépistage de l'hépatoblastome souhaité",["Formes de novo ≈ 25–30 % : mosaïcisme possible chez le cas index (variant à VAF basse, à rechercher dans les adénomes)"]],
+mutyh:["Majorité (18 ans) — fratrie du cas index en priorité",[]],
+pjs:["≈ 8 ans (avant la 1re endoscopie), plus tôt si symptômes",[]],
+jps:["≈ 12–15 ans ; SMAD4 : petite enfance (risque Rendu-Osler)",[]],
+phts:["Au diagnostic, y compris chez l'enfant (échographie thyroïdienne dès l'enfance)",["Phénotype très variable au sein d'une même famille ; mosaïcisme possible"]],
+lfs:["Dès la naissance / petite enfance si un dépistage pédiatrique (Toronto) est envisagé — décision accompagnée (psychologue)",["De novo 7–20 % : l'absence d'antécédent familial n'exclut pas","Variant à VAF basse : éliminer une hématopoïèse clonale (CHIP) avant de conclure"]],
+cdh1:["≈ 16–18 ans (gastrectomie discutée à partir de 20 ans)",[]],
+gapps:[MAJ,[]],ppap:[MAJ,[]],nthl1:["Majorité (18 ans) — fratrie du cas index",[]],axin2:[MAJ,[]],grem1:[MAJ,[]],
+prss1:["Enfant symptomatique (pancréatites) ; asymptomatique : à la majorité",["Tabac : multiplie et avance le risque de cancer — sevrage prioritaire"]],
+men1:["≈ 5 ans (début de la surveillance biologique)",["≈ 10 % de novo"]],
+men2:["DÈS LA NAISSANCE — thyroïdectomie prophylactique guidée par le codon (M918T : avant 1 an)",[]],
+men4:["≈ 5–10 ans (comme MEN1)",[]],
+cdc73:["≈ 5–10 ans",[]],
+carney:["Petite enfance (échocardiographie dès l'enfance)",[]],
+pgl:["≈ 6–10 ans (SDHB ; SDHD hérité du père)",["Empreinte SDHD/SDHAF2 : un porteur ayant hérité l'allèle de sa MÈRE est rarement atteint mais transmet à 50 % ; ses enfants sont à risque s'il s'agit d'un homme"]],
+aip:["≈ 4 ans (début de la surveillance IGF-1 / prolactine)",["Pénétrance faible (≈ 20–30 %) : bénéfice surtout dans l'enfance et l'adolescence (gigantisme)"]],
+vhl:["≈ 1 an (examen ophtalmologique dès la 1re année)",["≈ 20 % de novo ; mosaïcisme possible chez le cas index"]],
+hlrcc:["≈ 8–10 ans (IRM rénale annuelle)",[]],
+bhd:["≈ 18–20 ans",[]],
+hprc:[MAJ,[]],
+bap1:["≈ 16 ans (fond d'œil annuel)",[]],
+melanome:["Majorité — la surveillance cutanée des apparentés à risque ne dépend pas du test",["Le statut CDKN2A conditionne surtout la surveillance pancréatique"]],
+pot1:[MAJ,[]],
+gorlin:["Enfance (avant 8 ans) ; SUFU : dès la naissance (médulloblastome)",[]],
+xp:["Fratrie : dès la naissance (photoprotection immédiate)",["Familles maghrébines : recherche ciblée du fondateur XPC c.1643_1644del possible"]],
+nf1:["Diagnostic clinique le plus souvent ; test moléculaire utile si tableau incomplet (vs Legius)",["≈ 50 % de novo ; forme segmentaire (mosaïque) : risque de transmission faible mais forme généralisée possible chez l'enfant"]],
+nf2:["Dès la naissance–10 ans (IRM à partir de 10–12 ans)",["Mosaïcisme ≈ 30 % des cas de novo : variant absent du sang → rechercher sur 2 tumeurs ; risque de transmission < 50 % si mosaïque"]],
+schwannomatose:["Adolescence / âge adulte",["Pénétrance incomplète, sauts de génération possibles"]],
+tsc:["Au diagnostic clinique ; diagnostic anténatal évoqué sur rhabdomyome cardiaque",["2/3 de novo ; mosaïcisme germinal parental ≈ 1–2 % (récurrence résiduelle)"]],
+rb1:["À LA NAISSANCE (voire en prénatal) — fonds d'œil précoces",["Rétinoblastome unilatéral sans variant sanguin : mosaïcisme possible chez le cas index → sa descendance reste à risque","Fratrie : FO répétés tant que le statut est inconnu"]],
+rtps:["Dès la naissance",["Mosaïcisme gonadique parental décrit : récurrence possible malgré des parents négatifs"]],
+dicer1:["Dès la naissance / petite enfance (dépistage du PPB jusqu'à 8 ans)",["Pénétrance faible : la plupart des porteurs n'auront pas de tumeur grave"]],
+wt1:["Au diagnostic clinique",["Majoritairement de novo ; WAGR : vérifier l'absence de remaniement équilibré parental (caryotype/ACPA)"]],
+bws:["Au diagnostic clinique (pas de test prédictif en fratrie sauf mécanisme héréditaire)",["Récurrence en général < 1 % ; ÉLEVÉE (jusqu'à 50 %) si CDKN1C transmis par la mère ou anomalie héréditaire de IC1/IC2 — conseil selon le mécanisme"]],
+neuroblastome:["Dès la naissance",[]],
+fanconi:["Fratrie : au plus tôt (également pour l'identification d'un donneur HLA-compatible)",[]],
+at:["Fratrie : au diagnostic du cas index",["Hétérozygotes (parents) : risque mammaire modéré → fiche « Prédisposition ATM »"]],
+bloom:["Fratrie : au diagnostic du cas index",[]],
+nbs:["Fratrie : au diagnostic du cas index",["Hétérozygotes NBN : risque de cancer du sein modéré débattu"]],
+werner:["Fratrie : âge adulte (début post-pubertaire)",[]],
+rts:["Fratrie : au diagnostic du cas index",[]],
+telomere:["Au diagnostic ; apparentés avant tout don de cellules souches",["Anticipation (formes AD TERT/TERC) : la génération suivante est plus précoce et plus sévère"]],
+leucemies:["Apparentés candidats au don de CSH : systématique ; enfants : selon le gène (GATA2, CEBPA)",["Exclure le variant familial chez tout donneur apparenté AVANT allogreffe"]],
+hoxb13:[MAJ,[]],gist:[MAJ,[]],
+ext:["Au diagnostic clinique (enfance)",[]],
+chordome:[MAJ,[]],
+rasopathies:["Au diagnostic clinique",["Majoritairement de novo"]],
+sgb:["Au diagnostic clinique (néonatal)",["Lié à l'X : rechercher le statut de conductrice chez la mère"]],
+perlman:["Au diagnostic clinique (néonatal)",[]],
+elp1:["Selon le contexte (pas de surveillance consensuelle)",[]]};
+
+/* Signes cliniques non tumoraux → syndromes (diagnostic différentiel) */
+const SIGNS=[
+["Peau & phanères",[
+["Taches café-au-lait multiples",["nf1","cmmrd","fanconi","bloom"]],
+["Lentigines péri-orificielles / muqueuses",["pjs","carney"]],
+["Lentigines axillaires / inguinales",["nf1"]],
+["Neurofibromes",["nf1"]],
+["Trichilemmomes, papillomatose orale, kératoses acrales",["phts"]],
+["Fibrofolliculomes",["bhd"]],
+["Léiomyomes cutanés",["hlrcc"]],
+["Angiofibromes faciaux",["tsc","men1"]],
+["Taches hypomélaniques",["tsc"]],
+["Pits palmo-plantaires",["gorlin"]],
+["Photosensibilité extrême / lentigines photo-induites précoces",["xp","bloom","rts"]],
+["Poïkilodermie",["rts"]],
+["Dystrophie unguéale + leucoplasie orale",["telomere"]],
+["Papules rosées « spitzoïdes » (MBAIT)",["bap1"]],
+["Hyperpigmentation + mastocytose",["gist"]]]],
+["Croissance & morphologie",[
+["Macrocéphalie",["phts","gorlin","nf1"]],
+["Microcéphalie",["nbs","fanconi","bloom"]],
+["Petite taille",["fanconi","bloom","nbs","rts","werner","rasopathies"]],
+["Macrosomie / hémihyperplasie / macroglossie",["bws","sgb","perlman"]],
+["Gigantisme / croissance accélérée",["aip"]],
+["Anomalies du rayon radial / du pouce",["fanconi","rts"]],
+["Aniridie",["wt1"]],
+["Anomalies génitales / DSD 46,XY",["wt1"]],
+["Oligodontie",["axin2"]],
+["Kératokystes odontogéniques",["gorlin"]],
+["Ostéochondromes multiples",["ext"]],
+["Vieillissement prématuré post-pubertaire",["werner"]],
+["Dysmorphie + cardiopathie (Noonan / Costello)",["rasopathies"]]]],
+["Neurologie & œil",[
+["Ataxie cérébelleuse + télangiectasies oculaires",["at"]],
+["Hypertrophie de l'épithélium pigmentaire rétinien (CHRPE)",["fap"]],
+["Cataracte juvénile",["nf2","werner","rts"]],
+["Nodules de Lisch",["nf1"]],
+["Hypoventilation centrale / maladie de Hirschsprung",["neuroblastome","men2"]],
+["Épilepsie, tubers corticaux, TAND",["tsc"]],
+["Autisme + macrocéphalie",["phts"]]]],
+["Viscéral & endocrinien",[
+["Pneumothorax spontanés / kystes pulmonaires",["bhd","tsc"]],
+["Kystes rénaux multiples",["vhl","tsc","bhd"]],
+["Fibromes utérins précoces et profus",["hlrcc"]],
+["Hyperparathyroïdie primaire",["men1","cdc73","men4","men2"]],
+["Polypes hamartomateux digestifs",["pjs","jps","phts"]],
+["Polypose adénomateuse (≥ 10 adénomes)",["fap","mutyh","ppap","nthl1","cmmrd","axin2","grem1"]],
+["Pancréatites dès l'enfance",["prss1"]],
+["Épistaxis / télangiectasies (Rendu-Osler)",["jps"]],
+["Goitre multinodulaire précoce",["dicer1","phts"]],
+["HTA paroxystique / catécholamines élevées",["pgl","men2","vhl","nf1"]],
+["Cushing ACTH-indépendant",["carney","men1"]],
+["Myxomes (cardiaques, cutanés)",["carney"]]]],
+["Hématologie & immunité",[
+["Cytopénies / aplasie inexpliquées",["fanconi","telomere","leucemies"]],
+["Thrombopénie familiale ancienne",["leucemies"]],
+["Déficit immunitaire / infections récurrentes",["at","nbs","leucemies","bloom"]],
+["Fibrose pulmonaire / cirrhose familiales précoces",["telomere"]],
+["Toxicité majeure à la chimio- / radiothérapie",["fanconi","at","nbs","bloom","telomere"]]]],
+["Contexte familial",[
+["Consanguinité / fratrie atteinte, parents indemnes",null]]]];
+SIGNS.forEach(g=>g[1].forEach(s=>{if(s[1]===null) s[1]=DATA.filter(d=>/\bAR\b/.test(d.tr)).map(d=>d.id);}));
+const SIGN_MAP={}; SIGNS.forEach(g=>g[1].forEach(s=>SIGN_MAP[s[0]]=s[1]));
+
 /* ---------- utilitaires ---------- */
-const norm=s=>(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+const norm=s=>(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
 const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-const content=document.getElementById("content");
-const side=document.getElementById("side");
-const layout=document.getElementById("layout");
-const qInput=document.getElementById("q");
-const overlay=document.getElementById("overlay");
-const panel=document.getElementById("panel");
+const $=id=>document.getElementById(id);
+const content=$("content"), side=$("side"), layout=$("layout"), qInput=$("q"), overlay=$("overlay"), panel=$("panel");
 let mode="syn", query="", cat=null, trF=null, orgSel=null, genSel=null, panelId=null;
+let diagSel=new Set(), sigSel=new Set();
+const byId={}; DATA.forEach(d=>byId[d.id]=d);
+const tokens=()=>norm(query).split(/\s+/).filter(Boolean);
 
 function hi(text){
-  const q=norm(query);
-  if(!q) return esc(text);
-  const n=norm(text); let out="",i=0;
-  while(true){
-    const j=n.indexOf(q,i);
-    if(j===-1){out+=esc(text.slice(i));break;}
-    out+=esc(text.slice(i,j))+"<mark>"+esc(text.slice(j,j+q.length))+"</mark>";
-    i=j+q.length;
-  }
-  return out;
+  const toks=tokens();
+  if(!toks.length) return esc(text);
+  const n=norm(text), on=new Array(text.length).fill(false);
+  if(n.length!==text.length) return esc(text);
+  toks.forEach(t=>{let i=0,j;while((j=n.indexOf(t,i))!==-1){for(let k=j;k<j+t.length;k++)on[k]=true;i=j+t.length;}});
+  let out="",cur=false;
+  for(let k=0;k<text.length;k++){if(on[k]!==cur){out+=on[k]?"<mark>":"</mark>";cur=on[k];}out+=esc(text[k]);}
+  return out+(cur?"</mark>":"");
+}
+let toastT=null;
+function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("on");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("on"),2000);}
+function copy(text,msg){
+  const done=()=>toast(msg||"Copié dans le presse-papiers");
+  if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(text).then(done,()=>fallback());}
+  else fallback();
+  function fallback(){const ta=document.createElement("textarea");ta.value=text;ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();try{document.execCommand("copy");done();}catch(e){toast("Copie impossible");}ta.remove();}
 }
 
 /* thème */
@@ -921,17 +1228,43 @@ let theme=pget("sp-theme");
 if(!theme) theme=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light";
 function applyTheme(){if(theme==="dark")root.dataset.theme="dark"; else delete root.dataset.theme;}
 applyTheme();
-document.getElementById("t-theme").addEventListener("click",()=>{theme=(theme==="dark")?"light":"dark";pset("sp-theme",theme);applyTheme();});
+$("t-theme").addEventListener("click",()=>{theme=(theme==="dark")?"light":"dark";pset("sp-theme",theme);applyTheme();});
 
-/* ---------- index ---------- */
-const ORGS={}; const GENES={};
+/* ---------- index : organes, gènes ---------- */
+const GSTOP=new Set(["MMR","IC1","IC2","XP","XPD","XP-V","FANCD1","FANCN","LAM","SMD","LAL"]);
+function geneSyms(label){return (label.match(/\b[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)?\b/g)||[]).filter(x=>(x.length>=3||x==="FH")&&!GSTOP.has(x));}
+/* les lignes « … — voir fiches dédiées » sont des renvois : non indexées pour ce syndrome */
+function synGenes(d){if(!d._g){const s=new Set();d.genes.forEach(g=>{if(!/voir fiche/i.test(g[1]||""))geneSyms(g[0]).forEach(x=>s.add(x));});d._g=[...s];}return d._g;}
+/* gènes auxquels s'applique une ligne du spectre (« … — BRCA2 ») ; null = tout le syndrome */
+function rowGenes(d,t){
+  const i=t[0].lastIndexOf(" — "); if(i<0) return null;
+  const syms=new Set(synGenes(d));
+  const hits=(t[0].slice(i+3).match(/[A-Z][A-Z0-9]+/g)||[]).filter(x=>syms.has(x));
+  return hits.length?hits:null;
+}
+/* lignes « tous cancers confondus » : pas de risque par organe → non quantifiées dans les vues transversales */
+const isAgg=t=>/^Tou(t|s) cancers? confondus/i.test(t[0]);
+const ORGS={}, GENES={};
 DATA.forEach(d=>{
-  d.sp.forEach(t=>{(t[1]||[]).forEach(o=>{(ORGS[o]=ORGS[o]||[]).push({id:d.id,nom:d.nom,t:t[0],r:t[2],rv:t[3],note:t[4]||""});});});
-  d.genes.forEach(g=>{const key=g[0].split(" ")[0]; (GENES[key]=GENES[key]||new Set()).add(d.id);});
+  d.sp.forEach(t=>{(t[1]||[]).forEach(o=>{(ORGS[o]=ORGS[o]||[]).push({id:d.id,nom:d.nom,t:t[0],r:t[2],rv:isAgg(t)?null:t[3],note:t[4]||"",g:rowGenes(d,t)||synGenes(d)});});});
+  synGenes(d).forEach(g=>(GENES[g]=GENES[g]||new Set()).add(d.id));
 });
 const ORG_LIST=Object.keys(ORGS).sort((a,b)=>a.localeCompare(b,"fr"));
 const GENE_LIST=Object.keys(GENES).sort();
-document.getElementById("hmeta").innerHTML=DATA.length+" syndromes<br>"+GENE_LIST.length+" gènes · "+ORG_LIST.length+" organes";
+$("hmeta").innerHTML=DATA.length+" syndromes<br>"+GENE_LIST.length+" gènes · "+ORG_LIST.length+" organes";
+
+const DIAG_GROUPS=[
+["Digestif & pancréas",["Côlon-rectum","Estomac","Intestin grêle / duodénum","Pancréas","Foie / voies biliaires"]],
+["Sein & gynécologie",["Sein","Ovaire","Endomètre / utérus","Col utérin"]],
+["Rein & urologie",["Rein","Voies urinaires / vessie","Prostate","Testicule"]],
+["Endocrinien",["Thyroïde","Parathyroïdes","Hypophyse","Surrénale (cortex)","Phéochromocytome / paragangliome","Thymus"]],
+["Peau & œil",["Peau","Œil"]],
+["SNC & ORL",["Cerveau / SNC","ORL / tête et cou"]],
+["Thorax",["Poumon / plèvre","Cœur"]],
+["Hématologie",["Sang / moelle"]],
+["Os & tissus mous",["Os","Tissus mous / sarcomes"]]];
+const ORG_GROUPS=(()=>{const seen=new Set();const gs=DIAG_GROUPS.map(g=>[g[0],g[1].filter(o=>ORGS[o]&&!seen.has(o)&&seen.add(o))]);const rest=ORG_LIST.filter(o=>!seen.has(o));if(rest.length)gs.push(["Autres",rest]);return gs.filter(g=>g[1].length);})();
+const ORG_ORDER=ORG_GROUPS.flatMap(g=>g[1]);
 
 const TRS=[["AD","AD"],["AR","AR"],["X","Lié à l'X"],["emp","Empreinte"]];
 function trMatch(d,k){
@@ -942,70 +1275,186 @@ function trMatch(d,k){
   if(k==="emp") return /empreinte/i.test(t);
   return true;
 }
-function synMatches(d,q){
-  if(!q) return true;
-  if(norm(d.nom).includes(q)) return true;
-  if(d.al.some(a=>norm(a).includes(q))) return true;
-  if(d.genes.some(g=>norm(g[0]).includes(q))) return true;
-  if(d.sp.some(t=>norm(t[0]).includes(q)||(t[1]||[]).some(o=>norm(o).includes(q)))) return true;
-  if(d.va.some(v=>norm(v[0]).includes(q))) return true;
-  return false;
+
+/* ---------- recherche multi-termes ---------- */
+function hay(d){
+  if(!d._h){
+    d._h={nom:norm(d.nom+" "+d.al.join(" ")),gen:norm(d.genes.map(g=>g[0]).join(" ")),
+      sp:norm(d.sp.map(t=>t[0]+" "+(t[1]||[]).join(" ")).join(" ")),va:norm(d.va.map(v=>v[0]).join(" ")),
+      txt:norm([d.pre,d.tr,...d.genes.map(g=>g[1]),...d.sp.map(t=>t[2]+" "+(t[4]||"")),...d.va.map(v=>v[1]),...d.cr,...d.su,...d.tt].join(" "))};
+    d._sym=new Set(synGenes(d).map(norm));
+  }
+  return d._h;
 }
-function filtered(){
-  const q=norm(query);
-  return DATA.filter(d=>synMatches(d,q)&&(!cat||d.cat===cat)&&(!trF||trMatch(d,trF)));
+/* score > 0 si tous les termes sont trouvés ; full = trouvé seulement dans le texte des fiches */
+function searchScore(d,toks){
+  const h=hay(d); let s=0, full=false;
+  for(const k of toks){
+    let v=0;
+    if(d._sym.has(k)) v=12;
+    else if(h.nom.includes(k)) v=10;
+    else if(h.gen.includes(k)) v=8;
+    else if(h.sp.includes(k)) v=6;
+    else if(h.va.includes(k)) v=6;
+    else if(h.txt.includes(k)){v=1;full=true;}
+    if(!v) return null;
+    s+=v;
+  }
+  return {s,full};
+}
+function baseFilter(d){return (!cat||d.cat===cat)&&(!trF||trMatch(d,trF));}
+function searched(){
+  const toks=tokens();
+  const ds=DATA.filter(baseFilter);
+  if(!toks.length) return {main:ds,full:[]};
+  const sc=ds.map(d=>({d,r:searchScore(d,toks)})).filter(x=>x.r).sort((a,b)=>b.r.s-a.r.s);
+  return {main:sc.filter(x=>!x.r.full).map(x=>x.d),full:sc.filter(x=>x.r.full).map(x=>x.d)};
 }
 
-/* ---------- panneau fiche ---------- */
+/* ---------- conseil génétique ---------- */
+function cgInfo(d){
+  const tr=d.tr, L=[];
+  const pr=tr.split("(")[0], isX=/à l'X/i.test(tr);
+  const isAR=/\bAR\b/.test(pr)||(!/\bAD\b/.test(pr)&&/\bAR\b/.test(tr));
+  const isAD=/\bAD\b/.test(pr)||(!/\bAR\b/.test(pr)&&/\bAD\b/.test(tr));
+  if(isAD) L.push("Autosomique dominant : risque de transmission de 50 % à chaque grossesse, quel que soit le sexe du parent porteur ; pénétrance incomplète possible (un porteur peut rester indemne).");
+  if(isAD&&/de novo/i.test(tr)) L.push("Variants de novo fréquents : proposer l'analyse des deux parents ; s'ils sont négatifs, risque de récurrence dans la fratrie faible (≈ 1 %) mais non nul (mosaïcisme germinal).");
+  if(isAR) L.push("Autosomique récessif : parents en règle porteurs obligatoires ; fratrie du cas index : 25 % atteints, 2/3 des sains sont porteurs. Descendance d'un patient : tous porteurs, risque d'atteinte faible sauf conjoint porteur → proposer l'analyse du conjoint (consanguinité, même origine fondatrice).");
+  if(isX) L.push("Composante liée à l'X : mère conductrice → 50 % des garçons atteints, 50 % des filles conductrices ; père atteint → toutes ses filles conductrices, aucun fils atteint.");
+  const c=CG[d.id]; if(c) c[1].forEach(x=>L.push(x));
+  if(!/\bAR\b/.test(pr)){
+    const bi={}; synGenes(d).forEach(g=>{if(BIAL[g])(bi[BIAL[g]]=bi[BIAL[g]]||[]).push(g);});
+    Object.keys(bi).forEach(ph=>L.push("Conseil reproductif — "+bi[ph].join("/")+" à l'état biallélique : "+ph+". Si le conjoint est porteur d'un variant du même gène : risque de 25 % par grossesse → discuter l'analyse du conjoint."));
+    L.push("Dépistage en cascade : test ciblé du variant familial chez les apparentés au 1er degré, puis de proche en proche.");
+  }
+  L.push("Information de la parentèle : obligation légale en France (art. L1131-1-2 du CSP) — remettre au patient une lettre d'information destinée aux apparentés.");
+  L.push("Diagnostic prénatal / préimplantatoire : à discuter avec un CPDPN pour les formes graves à révélation précoce ; au cas par cas pour les prédispositions de l'adulte.");
+  return {age:c?c[0]:null,lines:L};
+}
+
+/* ---------- liens externes ---------- */
+const enc=encodeURIComponent;
+function geneLinks(g){
+  return [["ClinVar","https://www.ncbi.nlm.nih.gov/clinvar/?term="+enc(g)+"%5Bgene%5D"],
+    ["gnomAD","https://gnomad.broadinstitute.org/gene/"+enc(g)+"?dataset=gnomad_r4"],
+    ["OMIM","https://www.omim.org/search?search="+enc(g)],
+    ["GeneReviews","https://www.ncbi.nlm.nih.gov/books/NBK1116/?term="+enc(g)],
+    ["ClinGen","https://search.clinicalgenome.org/kb/genes?search="+enc(g)],
+    ["LOVD","https://databases.lovd.nl/shared/genes/"+enc(g)]];
+}
+function linksHtml(g){return '<div class="links">'+geneLinks(g).map(l=>'<a href="'+l[1]+'" target="_blank" rel="noopener">'+l[0]+" ↗</a>").join("")+"</div>";}
+function variantLink(label){
+  const m=label.match(/^([A-Z][A-Z0-9]+)\s+((?:c|p)\.[^\s(]+)/);
+  if(!m) return "";
+  return ' <a class="ext" href="https://www.ncbi.nlm.nih.gov/clinvar/?term='+enc(m[1]+" "+m[2])+'" target="_blank" rel="noopener" title="Rechercher dans ClinVar">ClinVar ↗</a>';
+}
+
+/* ---------- barres de risque ---------- */
+function barHtml(name,rv){
+  if(rv==null) return '<span class="nobar">non quantifié / voir texte</span>';
+  const p=popFor(name);
+  const mk=p?'<i class="popmk" style="left:'+Math.min(99,Math.max(.6,p.v))+'%" title="Population générale ≈ '+String(p.v).replace(".",",")+" % ("+esc(p.l)+')"></i>':"";
+  return '<div class="bartrack"><div class="bar" style="width:'+Math.max(2,Math.min(100,rv))+'%"></div>'+mk+"</div>";
+}
 function bar(t){
-  const orgs=(t[1]||[]).map(o=>'<span class="torg" data-org="'+esc(o)+'">'+esc(o)+"</span>").join("");
+  const orgs=(t[1]||[]).map(o=>'<span class="torg" data-org-go="'+esc(o)+'" tabindex="0">'+esc(o)+"</span>").join("");
   const note=t[4]?'<span class="tnote">'+esc(t[4])+'</span>':"";
-  const b=(t[3]==null)?'<span class="nobar">non quantifié / voir texte</span>'
-    :'<div class="bartrack"><div class="bar" style="width:'+Math.max(2,Math.min(100,t[3]))+'%"></div></div>';
-  return '<div class="trow"><div class="tname">'+esc(t[0])+orgs+note+'</div>'+b+'<div class="rtxt">'+esc(t[2])+"</div></div>";
+  return '<div class="trow"><div class="tname">'+esc(t[0])+orgs+note+'</div>'+barHtml(t[0],t[3])+'<div class="rtxt">'+esc(t[2])+"</div></div>";
 }
-function section(cls,titleCls,title,inner){
-  return inner?'<div class="sec '+cls+'"><div class="sec-h '+titleCls+'">'+title+"</div>"+inner+"</div>":"";
+const LEGEND='<div class="legend"><span><i class="lg-bar"></i>risque cumulé estimé (porteurs)</span><span><i class="lg-pop"></i>repère : population générale (vie entière, ≈ SEER)</span></div>';
+const sortRows=rows=>[...rows].sort((a,b)=>(b[3]??-1)-(a[3]??-1));
+
+/* ---------- panneau fiche ---------- */
+const SECS=[["spec","Spectre"],["gene","Gènes"],["var","Variants"],["cg","Conseil"],["crit","Indications"],["surv","Surveillance"],["ttt","Traitement"],["src","Sources"]];
+function section(key,titleCls,title,inner){
+  return inner?'<div class="sec sec-'+key+'" id="s-'+key+'"><div class="sec-h '+titleCls+'">'+title+"</div>"+inner+"</div>":"";
 }
+const list=a=>a&&a.length?'<ul class="plain">'+a.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>":"";
 function fiche(d){
-  const sp=[...d.sp].sort((a,b)=>(b[3]??-1)-(a[3]??-1)).map(bar).join("");
-  const genes=d.genes.map(g=>'<div class="generow"><b>'+esc(g[0])+"</b>"+(g[1]?' — <span>'+esc(g[1])+"</span>":"")+"</div>").join("");
-  const va=d.va.map(v=>'<div class="vrow"><code>'+esc(v[0])+"</code>"+(v[1]?" <span>— "+esc(v[1])+"</span>":"")+"</div>").join("");
-  const list=a=>a&&a.length?'<ul class="plain">'+a.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>":"";
+  const sp=sortRows(d.sp).map(bar).join("");
+  const genes=d.genes.map(g=>{
+    const syms=geneSyms(g[0]);
+    const lab=syms.length?esc(g[0]).replace(new RegExp("\\b("+syms.join("|")+")\\b","g"),'<a href="#/gen/$1" class="glink" data-gene-go="$1">$1</a>'):esc(g[0]);
+    return '<div class="generow"><b>'+lab+"</b>"+(g[1]?' — <span>'+esc(g[1])+"</span>":"")+"</div>";
+  }).join("");
+  const va=d.va.map(v=>'<div class="vrow"><code>'+esc(v[0])+"</code>"+(v[1]?" <span>— "+esc(v[1])+"</span>":"")+variantLink(v[0])+"</div>").join("");
+  const cg=cgInfo(d);
+  const cgHtml=(cg.age?'<div class="cg-age"><b>Test présymptomatique chez l\'enfant :</b> '+esc(cg.age)+"</div>":"")+list(cg.lines);
+  const nav='<nav class="p-nav" aria-label="Sections">'+SECS.filter(s=>s[0]!=="var"||d.va.length).map(s=>'<a href="#s-'+s[0]+'" data-jump="s-'+s[0]+'">'+s[1]+"</a>").join("")+"</nav>";
   return '<div class="p-head"><div>'
     +'<div class="p-eyebrow">'+esc(CATS[d.cat])+'</div>'
-    +'<div class="p-title">'+esc(d.nom)+'</div>'
+    +'<h2 class="p-title" id="p-title">'+esc(d.nom)+'</h2>'
     +(d.al.length?'<div class="p-alias">'+esc(d.al.join(" · "))+'</div>':"")
     +'</div><div class="p-actions">'
+    +'<button class="p-btn" data-act="link" title="Copier le lien vers cette fiche">🔗</button>'
+    +'<button class="p-btn" data-act="text" title="Copier la fiche en texte (compte-rendu, courrier)">📋</button>'
+    +'<button class="p-btn" data-act="print" title="Imprimer / PDF">🖨</button>'
     +'<button class="p-btn" id="p-close" aria-label="Fermer">✕</button>'
     +"</div></div>"
-    +'<div class="p-body">'
+    +'<div class="p-body">'+nav
+    +'<div class="print-only print-head">Atlas · Spectres tumoraux — fiche imprimée le '+new Date().toLocaleDateString("fr-FR")+"</div>"
     +'<div class="factline"><span>Transmission : <b>'+esc(d.tr)+"</b></span><span>Fréquence : <b>"+esc(d.pre)+"</b></span></div>"
-    +section("","h-spec","Spectre tumoral — du plus fréquent au plus rare",sp)
-    +section("","h-gene","Gènes",genes)
-    +section("","h-var","Variants récurrents / fondateurs",va)
-    +section("sec-crit","h-crit","Critères d'indication du test",list(d.cr))
-    +section("sec-surv","h-surv","Surveillance",list(d.su))
-    +section("sec-ttt","h-ttt","Implications thérapeutiques",list(d.tt))
-    +section("","h-src","Sources",'<div class="srcs">'+d.src.map(esc).join(" · ")+"</div>")
+    +section("spec","h-spec","Spectre tumoral — du plus fréquent au plus rare",LEGEND+sp)
+    +section("gene","h-gene","Gènes",genes)
+    +section("var","h-var","Variants récurrents / fondateurs",va)
+    +section("cg","h-cg","Conseil génétique",cgHtml)
+    +section("crit","h-crit","Critères d'indication du test",list(d.cr))
+    +section("surv","h-surv","Surveillance",list(d.su))
+    +section("ttt","h-ttt","Implications thérapeutiques",list(d.tt))
+    +section("src","h-src","Sources",'<div class="srcs">'+d.src.map(esc).join(" · ")+"</div>")
+    +'<div class="print-only disclaimer">Document d\'aide à la consultation — ne se substitue pas aux référentiels en vigueur ni à la décision en RCP.</div>'
     +"</div>";
 }
-function panelWidth(){let w=parseInt(pget("sp-pw")||"620",10); if(isNaN(w))w=620; return Math.max(380,Math.min(w,Math.round(window.innerWidth*0.95)));}
-function openPanel(id){
-  const d=DATA.find(x=>x.id===id); if(!d) return;
+function ficheText(d){
+  const L=[], cg=cgInfo(d), sec=(t,a)=>{if(a&&a.length){L.push("",t);a.forEach(x=>L.push("- "+x));}};
+  L.push(d.nom.toUpperCase());
+  if(d.al.length) L.push("Alias : "+d.al.join(", "));
+  L.push("Transmission : "+d.tr,"Fréquence : "+d.pre);
+  sec("SPECTRE TUMORAL",sortRows(d.sp).map(t=>t[0]+" : "+t[2]+(t[4]?" ("+t[4]+")":"")));
+  sec("GÈNES",d.genes.map(g=>g[0]+(g[1]?" — "+g[1]:"")));
+  sec("VARIANTS RÉCURRENTS",d.va.map(v=>v[0]+(v[1]?" — "+v[1]:"")));
+  sec("CONSEIL GÉNÉTIQUE",(cg.age?["Test présymptomatique chez l'enfant : "+cg.age]:[]).concat(cg.lines));
+  sec("CRITÈRES D'INDICATION",d.cr);
+  sec("SURVEILLANCE",d.su);
+  sec("IMPLICATIONS THÉRAPEUTIQUES",d.tt);
+  L.push("","Sources : "+d.src.join(" ; "));
+  return L.join("\n");
+}
+function panelWidth(){if(window.innerWidth<600) return window.innerWidth;let w=parseInt(pget("sp-pw")||"640",10); if(isNaN(w))w=640; return Math.max(380,Math.min(w,Math.round(window.innerWidth*0.95)));}
+function recents(){try{return JSON.parse(pget("sp-recent")||"[]").filter(id=>byId[id]);}catch(e){return [];}}
+let lastFocus=null;
+function openPanel(id,push=true){
+  const d=byId[id]; if(!d) return;
+  if(!panelId) lastFocus=document.activeElement;
   panelId=id;
   panel.innerHTML='<div class="p-resize" title="Glisser pour redimensionner (double-clic : réinitialiser)"></div>'+fiche(d);
+  panel.setAttribute("aria-labelledby","p-title");
   panel.style.width=panelWidth()+"px";
   panel.classList.add("open"); overlay.classList.add("open");
   document.body.style.overflow="hidden";
-  panel.scrollTop=0; const pb=panel.querySelector(".p-body"); if(pb) pb.scrollTop=0;
-  document.getElementById("p-close").addEventListener("click",closePanel);
-  panel.querySelectorAll("[data-org]").forEach(el=>el.addEventListener("click",()=>{
-    closePanel(); mode="org"; orgSel=el.dataset.org; syncTabs(); render(); window.scrollTo({top:0});
-  }));
+  const pb=panel.querySelector(".p-body"); if(pb) pb.scrollTop=0;
+  $("p-close").addEventListener("click",()=>closePanel());
+  $("p-close").focus({preventScroll:true});
+  pset("sp-recent",JSON.stringify([id,...recents().filter(x=>x!==id)].slice(0,6)));
+  if(push) writeHash(true);
 }
-function closePanel(){panelId=null;panel.classList.remove("open");overlay.classList.remove("open");document.body.style.overflow="";}
-overlay.addEventListener("click",closePanel);
+function closePanel(push=true){
+  if(!panelId) return;
+  panelId=null;panel.classList.remove("open");overlay.classList.remove("open");document.body.style.overflow="";
+  if(lastFocus&&document.contains(lastFocus)) lastFocus.focus({preventScroll:true});
+  if(push) writeHash(true);
+}
+overlay.addEventListener("click",()=>closePanel());
+panel.addEventListener("click",e=>{
+  const j=e.target.closest("[data-jump]");
+  if(j){e.preventDefault();const t=$(j.dataset.jump);if(t)t.scrollIntoView({behavior:"smooth",block:"start"});return;}
+  const a=e.target.closest("[data-act]"); if(!a||!panelId) return;
+  const d=byId[panelId];
+  if(a.dataset.act==="link") copy(location.href,"Lien de la fiche copié");
+  else if(a.dataset.act==="text") copy(ficheText(d),"Fiche copiée en texte");
+  else if(a.dataset.act==="print"){document.body.classList.add("print-fiche");window.print();}
+});
+window.addEventListener("afterprint",()=>document.body.classList.remove("print-fiche"));
 /* redimensionnement du panneau par sa bordure gauche */
 let rsz=null;
 panel.addEventListener("pointerdown",e=>{
@@ -1017,8 +1466,7 @@ panel.addEventListener("pointerdown",e=>{
 });
 panel.addEventListener("pointermove",e=>{
   if(!rsz) return;
-  const w=Math.max(380,Math.min(rsz.w+(rsz.px-e.clientX),Math.round(window.innerWidth*0.95)));
-  panel.style.width=w+"px";
+  panel.style.width=Math.max(380,Math.min(rsz.w+(rsz.px-e.clientX),Math.round(window.innerWidth*0.95)))+"px";
 });
 function endResize(){
   if(!rsz) return;
@@ -1029,63 +1477,79 @@ panel.addEventListener("pointerup",endResize);
 panel.addEventListener("pointercancel",endResize);
 panel.addEventListener("dblclick",e=>{
   if(!e.target.closest(".p-resize")) return;
-  panel.style.width="620px"; pset("sp-pw","620");
+  panel.style.width="640px"; pset("sp-pw","640");
 });
 document.addEventListener("keydown",e=>{
-  if(e.key==="Escape"&&panelId) closePanel();
-  if(e.key==="/"&&document.activeElement!==qInput){e.preventDefault();qInput.focus();qInput.select();}
+  if(e.key==="Escape"&&panelId){closePanel();return;}
+  if(e.key==="/"&&!/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)){e.preventDefault();qInput.focus();qInput.select();}
+  if(e.key==="Tab"&&panelId){ /* garder le focus dans le panneau */
+    const f=[...panel.querySelectorAll("button,a[href],[tabindex]")].filter(x=>x.offsetParent!==null);
+    if(!f.length) return;
+    if(e.shiftKey&&document.activeElement===f[0]){e.preventDefault();f[f.length-1].focus();}
+    else if(!e.shiftKey&&document.activeElement===f[f.length-1]){e.preventDefault();f[0].focus();}
+    else if(!panel.contains(document.activeElement)){e.preventDefault();f[0].focus();}
+  }
 });
 
-/* ---------- diagnostic différentiel ---------- */
-const DIAG_GROUPS=[
-["Digestif & pancréas",["Côlon-rectum","Estomac","Intestin grêle / duodénum","Pancréas","Foie / voies biliaires"]],
-["Sein & gynécologie",["Sein","Ovaire","Endomètre / utérus","Col utérin"]],
-["Rein & urologie",["Rein","Voies urinaires / vessie","Prostate","Testicule"]],
-["Endocrinien",["Thyroïde","Parathyroïdes","Hypophyse","Surrénale (cortex)","Phéochromocytome / paragangliome","Thymus"]],
-["Peau & œil",["Peau","Œil"]],
-["SNC & ORL",["Cerveau / SNC","ORL / tête et cou"]],
-["Thorax",["Poumon / plèvre","Cœur"]],
-["Hématologie",["Sang / moelle"]],
-["Os & tissus mous",["Os","Tissus mous / sarcomes"]]];
-let diagSel=new Set();
-function viewDiag(){
-  side.style.display="none"; layout.classList.add("nosb");
-  const q=norm(query);
-  const grouped=new Set(); DIAG_GROUPS.forEach(g=>g[1].forEach(o=>grouped.add(o)));
-  const rest=ORG_LIST.filter(o=>!grouped.has(o));
-  const groups=rest.length?DIAG_GROUPS.concat([["Autres",rest]]):DIAG_GROUPS;
-  let html='<div class="diag-intro"><div class="diag-title">Diagnostic différentiel</div>'
-    +'<div class="diag-sub">Cocher la ou les localisations tumorales observées chez le patient ou dans la famille : les syndromes compatibles s\u2019affichent, classés par nombre de localisations couvertes puis par niveau de risque.</div></div>';
-  groups.forEach(gr=>{
-    const t=gr[0], orgs=gr[1];
-    const os=orgs.filter(o=>ORGS[o]&&(!q||norm(o).includes(q)||diagSel.has(o)));
-    if(!os.length) return;
-    html+='<div class="dgroup"><div class="dgroup-t">'+esc(t)+'</div><div class="dchips">'
-      +os.map(o=>'<span class="dchip'+(diagSel.has(o)?" on":"")+'" tabindex="0" role="checkbox" aria-checked="'+diagSel.has(o)+'" data-diag="'+esc(o)+'">'+esc(o)+"</span>").join("")
-      +"</div></div>";
-  });
-  html+='<div class="diag-bar"><span class="diag-count">'+diagSel.size+" localisation(s) sélectionnée(s)</span>"
-    +(diagSel.size?'<button class="diag-clear" data-diag-clear>Tout effacer</button>':"")+"</div>";
-  if(diagSel.size){
-    const res=DATA.map(d=>{
-      const rows=d.sp.filter(t=>(t[1]||[]).some(o=>diagSel.has(o)));
-      const orgsHit=new Set(); rows.forEach(t=>(t[1]||[]).forEach(o=>{if(diagSel.has(o))orgsHit.add(o);}));
-      const maxrv=rows.reduce((m,t)=>Math.max(m,t[3]??0),0);
-      return {d:d,rows:rows,n:orgsHit.size,maxrv:maxrv};
-    }).filter(x=>x.n>0).sort((a,b)=>b.n-a.n||b.maxrv-a.maxrv);
-    html+='<div class="hitgroup">'+res.length+" syndrome(s) compatible(s)</div>";
-    html+=res.map(x=>{
-      const rows=[...x.rows].sort((a,b)=>(b[3]??-1)-(a[3]??-1)).map(bar).join("");
-      const genes=x.d.genes.slice(0,5).map(g=>g[0].split(" ")[0]).join(" · ");
-      return '<div class="dres" data-open="'+x.d.id+'" tabindex="0" role="button">'
-        +'<div class="dres-head"><span class="dres-name">'+esc(x.d.nom)+'</span>'
-        +'<span class="dres-score">'+x.n+"/"+diagSel.size+" localisation(s)</span></div>"
-        +'<div class="dres-genes">'+esc(genes)+"</div>"+rows+"</div>";
-    }).join("")||'<div class="empty">Aucun syndrome ne couvre ces localisations.</div>';
-  } else {
-    html+='<div class="empty">Exemple : cocher « Estomac » + « Sein » fait remonter CDH1 (gastrique diffus + lobulaire) devant Lynch, Peutz-Jeghers, Li-Fraumeni…</div>';
+/* ---------- ClinVar (en ligne, NCBI E-utilities) ---------- */
+const EU="https://eutils.ncbi.nlm.nih.gov/entrez/eutils/";
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function euJSON(path,body){
+  const r=body?await fetch(EU+path,{method:"POST",body:new URLSearchParams(body)}):await fetch(EU+path);
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  return r.json();
+}
+async function clinvarTop(gene){
+  const key="cv:"+gene;
+  try{const c=sessionStorage.getItem(key);if(c) return JSON.parse(c);}catch(e){}
+  const terms=[gene+'[gene] AND ("clinsig pathogenic"[prop] OR "clinsig likely pathogenic"[prop]) AND "single gene"[prop]',
+               gene+'[gene] AND ("clinsig pathogenic"[prop] OR "clinsig likely pathogenic"[prop])',
+               gene+"[gene]"];
+  let ids=[], total=0;
+  for(const t of terms){
+    const j=await euJSON("esearch.fcgi?db=clinvar&retmode=json&retmax=5000&term="+enc(t));
+    ids=(j.esearchresult&&j.esearchresult.idlist)||[]; total=+((j.esearchresult&&j.esearchresult.count)||0);
+    if(ids.length) break;
+    await sleep(350);
   }
-  content.innerHTML=html;
+  /* échantillon : les entrées les plus anciennes (variants décrits de longue date = souvent récurrents) */
+  ids=ids.map(Number).sort((a,b)=>a-b).slice(0,600);
+  const out=[];
+  for(let i=0;i<ids.length;i+=200){
+    if(i) await sleep(350);
+    const j=await euJSON("esummary.fcgi",{db:"clinvar",retmode:"json",id:ids.slice(i,i+200).join(",")});
+    const res=j.result||{};
+    (res.uids||[]).forEach(u=>{
+      const r=res[u]; if(!r) return;
+      const cls=r.germline_classification||r.clinical_significance||{};
+      const desc=cls.description||"";
+      if(!/pathogenic/i.test(desc)||/conflict|benign|uncertain/i.test(desc)) return;
+      const genes=(r.genes||[]).map(g=>g.symbol);
+      if(genes.length&&!genes.includes(gene)) return;
+      out.push({uid:u,acc:r.accession||("VCV"+u),title:r.title||"",prot:r.protein_change||"",cls:desc,rev:cls.review_status||"",
+        n:((r.supporting_submissions&&r.supporting_submissions.scv)||[]).length,
+        cons:(r.molecular_consequence_list||[]).join(", ")});
+    });
+  }
+  out.sort((a,b)=>b.n-a.n);
+  const data={total,sampled:ids.length,top:out.slice(0,20),at:new Date().toISOString()};
+  try{sessionStorage.setItem(key,JSON.stringify(data));}catch(e){}
+  return data;
+}
+const STARS={"practice guideline":4,"reviewed by expert panel":3,"criteria provided, multiple submitters, no conflicts":2,"criteria provided, single submitter":1,"criteria provided, conflicting classifications":1,"criteria provided, conflicting interpretations":1};
+function stars(rev){const n=STARS[rev]??0;return '<span class="stars" title="'+esc(rev||"pas de critère")+'">'+"★".repeat(n)+"☆".repeat(4-n)+"</span>";}
+async function loadClinvar(gene,box){
+  box.innerHTML='<div class="cv-load">Interrogation de ClinVar…</div>';
+  try{
+    const d=await clinvarTop(gene);
+    if(!d.top.length){box.innerHTML='<div class="empty">Aucun variant pathogène retrouvé dans l\'échantillon ClinVar. <a href="'+geneLinks(gene)[0][1]+'" target="_blank" rel="noopener">Ouvrir ClinVar ↗</a></div>';return;}
+    box.innerHTML='<div class="cv-meta">'+d.top.length+" variants P/LP les plus soumis, parmi "+d.sampled+" entrées analysées ("+d.total+" au total pour la requête) — classement par nombre de soumissions (SCV), <b>proxy de récurrence entre laboratoires, pas une fréquence populationnelle</b>.</div>"
+      +'<div class="cv-scroll"><table class="cvt"><thead><tr><th>Variant</th><th>Protéine</th><th>Classement</th><th>Revue</th><th>Soum.</th></tr></thead><tbody>'
+      +d.top.map(v=>'<tr><td><a href="https://www.ncbi.nlm.nih.gov/clinvar/variation/'+esc(v.uid)+'/" target="_blank" rel="noopener"><code>'+esc(v.title)+"</code></a>"+(v.cons?'<div class="tnote">'+esc(v.cons)+"</div>":"")+"</td><td><code>"+esc(v.prot||"—")+"</code></td><td>"+esc(v.cls)+"</td><td>"+stars(v.rev)+'</td><td class="num">'+v.n+"</td></tr>").join("")
+      +"</tbody></table></div>";
+  }catch(e){
+    box.innerHTML='<div class="empty">ClinVar inaccessible depuis ce poste ('+esc(e.message||"réseau")+'). <a href="'+geneLinks(gene)[0][1]+'" target="_blank" rel="noopener">Ouvrir ClinVar dans un onglet ↗</a></div>';
+  }
 }
 
 /* ---------- barre latérale ---------- */
@@ -1101,110 +1565,251 @@ function renderSide(){
   html+='<div><div class="s-label">Transmission</div><div class="trbtns">';
   TRS.forEach(([k,lab])=>{html+='<button class="trb'+(trF===k?" on":"")+'" data-tr="'+k+'">'+lab+"</button>";});
   html+="</div></div>";
+  const rc=recents();
+  if(rc.length) html+='<div class="recent"><div class="s-label">Consultées récemment</div>'+rc.map(id=>'<button class="catbtn" data-open="'+id+'">'+esc(byId[id].nom)+"</button>").join("")+"</div>";
   html+='<div class="count" id="count"></div>';
   side.innerHTML=html;
   side.querySelectorAll("[data-cat]").forEach(b=>b.addEventListener("click",()=>{cat=b.dataset.cat||null;render();}));
   side.querySelectorAll("[data-tr]").forEach(b=>b.addEventListener("click",()=>{trF=(trF===b.dataset.tr)?null:b.dataset.tr;render();}));
 }
+function showSide(on){side.style.display=on?"":"none";layout.classList.toggle("nosb",!on);if(on)renderSide();}
 
 /* ---------- vues ---------- */
-function miniCard(d){
-  const pills=d.genes.slice(0,3).map(g=>'<span class="gpill">'+hi(g[0].split(" ")[0])+"</span>").join("")
-    +(d.genes.length>3?'<span class="gpill more">+'+(d.genes.length-3)+"</span>":"");
-  const top=[...d.sp].sort((a,b)=>(b[3]??-1)-(a[3]??-1)).slice(0,3).map(t=>{
+function miniCard(d,full){
+  const g=synGenes(d);
+  const pills=g.slice(0,4).map(x=>'<span class="gpill">'+hi(x)+"</span>").join("")+(g.length>4?'<span class="gpill more">+'+(g.length-4)+"</span>":"");
+  const top=sortRows(d.sp).slice(0,3).map(t=>{
     const b=(t[3]==null)?'<div class="minitrack"></div>':'<div class="minitrack"><div class="minibar" style="width:'+Math.max(3,Math.min(100,t[3]))+'%"></div></div>';
-    return '<div class="gc-row"><span class="nm">'+esc(t[0])+"</span>"+b+"</div>";
+    return '<div class="gc-row"><span class="nm">'+hi(t[0])+"</span>"+b+"</div>";
   }).join("");
   return '<div class="gcard" data-open="'+d.id+'" tabindex="0" role="button" aria-label="Ouvrir la fiche '+esc(d.nom)+'">'
-    +'<div class="gc-cat">'+esc(CATS[d.cat])+'</div>'
+    +'<div class="gc-cat">'+esc(CATS[d.cat])+(full?' <span class="hit-txt">· texte</span>':"")+'</div>'
     +'<div class="gc-name">'+hi(d.nom)+'</div>'
     +'<div class="gc-genes">'+pills+"</div>"
     +'<div class="gc-prev">'+top+"</div></div>";
 }
+function chip(attr,val,label,n){return '<span class="chip" tabindex="0" '+attr+'="'+esc(val)+'">'+label+"<small>"+n+"</small></span>";}
 function viewSyn(){
-  layout.classList.remove("nosb");
-  side.style.display="";
-  renderSide();
-  const ds=filtered();
-  const q=norm(query);
+  showSide(true);
+  const r=searched(), toks=tokens();
   let extra="";
-  if(q){
-    const gHits=GENE_LIST.filter(g=>norm(g).includes(q));
-    const oHits=ORG_LIST.filter(o=>norm(o).includes(q));
-    if(oHits.length) extra+='<div class="hitgroup">Organes correspondants</div><div class="chips" style="margin-bottom:10px">'+oHits.map(o=>'<span class="chip" tabindex="0" data-org-go="'+esc(o)+'">'+esc(o)+"<small>"+ORGS[o].length+"</small></span>").join("")+"</div>";
-    if(gHits.length) extra+='<div class="hitgroup">Gènes correspondants</div><div class="chips" style="margin-bottom:10px">'+gHits.map(g=>'<span class="chip" tabindex="0" data-gene-go="'+esc(g)+'">'+esc(g)+"<small>"+GENES[g].size+"</small></span>").join("")+"</div>";
+  if(toks.length){
+    const q=norm(query);
+    const gHits=GENE_LIST.filter(g=>toks.some(t=>norm(g).includes(t)));
+    const oHits=ORG_LIST.filter(o=>norm(o).includes(q)||toks.some(t=>t.length>2&&norm(o).includes(t)));
+    if(oHits.length) extra+='<div class="hitgroup">Organes</div><div class="chips mb">'+oHits.map(o=>chip("data-org-go",o,esc(o),ORGS[o].length)).join("")+"</div>";
+    if(gHits.length) extra+='<div class="hitgroup">Gènes</div><div class="chips mb">'+gHits.slice(0,30).map(g=>chip("data-gene-go",g,'<b class="mono">'+hi(g)+"</b>",GENES[g].size)).join("")+"</div>";
+    if(r.main.length||r.full.length) extra+='<div class="hitgroup">Syndromes</div>';
   }
-  content.innerHTML=extra+'<div class="grid">'+(ds.map(miniCard).join("")||'<div class="empty">Aucune fiche ne correspond aux filtres.</div>')+"</div>";
-  const c=document.getElementById("count");
-  if(c) c.textContent=ds.length+" / "+DATA.length+" fiches affichées";
+  let html=extra+'<div class="grid">'+(r.main.map(d=>miniCard(d)).join("")||(r.full.length?"":'<div class="empty">Aucune fiche ne correspond. Astuce : plusieurs mots se combinent (ex. « sein estomac », « rein pneumothorax »).</div>'))+"</div>";
+  if(r.full.length) html+='<div class="hitgroup">Mentionné dans le texte des fiches (critères, surveillance, traitements…)</div><div class="grid">'+r.full.map(d=>miniCard(d,true)).join("")+"</div>";
+  content.innerHTML=html;
+  const c=$("count");
+  if(c) c.textContent=(r.main.length+r.full.length)+" / "+DATA.length+" fiches affichées";
 }
 function viewOrg(){
-  side.style.display="none"; layout.classList.add("nosb");
-  const q=norm(query);
-  if(!orgSel){
-    const list=ORG_LIST.filter(o=>!q||norm(o).includes(q));
-    content.innerHTML='<div class="meta">Choisir un organe : toutes les tumeurs héréditaires le concernant, tous syndromes confondus, triées par risque.</div><div class="chips">'
-      +list.map(o=>'<span class="chip" tabindex="0" data-org-go="'+esc(o)+'">'+esc(o)+"<small>"+ORGS[o].length+"</small></span>").join("")
-      +(list.length?"":'<div class="empty">Aucun organe ne correspond.</div>')+"</div>";
-    return;
+  showSide(false);
+  const toks=tokens();
+  if(!orgSel||!ORGS[orgSel]){
+    let html='<div class="meta">Choisir un organe : toutes les tumeurs héréditaires le concernant, tous syndromes confondus, triées par risque, avec les gènes à considérer.</div>';
+    ORG_GROUPS.forEach(g=>{
+      const os=g[1].filter(o=>!toks.length||toks.every(t=>norm(o).includes(t)));
+      if(os.length) html+='<div class="dgroup-t">'+esc(g[0])+'</div><div class="chips mb">'+os.map(o=>chip("data-org-go",o,esc(o),ORGS[o].length)).join("")+"</div>";
+    });
+    content.innerHTML=html; return;
   }
   const rows=[...ORGS[orgSel]].sort((a,b)=>(b.rv??-1)-(a.rv??-1));
+  const gmax={}; rows.forEach(r=>r.g.forEach(g=>{gmax[g]=Math.max(gmax[g]??-1,r.rv??0);}));
+  const genes=Object.keys(gmax).sort((a,b)=>gmax[b]-gmax[a]||a.localeCompare(b));
   content.innerHTML='<button class="back" data-back="org">← Tous les organes</button>'
-    +'<div class="pane-title">'+esc(orgSel)+'</div><div class="pane-sub">'+rows.length+' entrées — cliquer une ligne pour ouvrir la fiche du syndrome.</div>'
-    +rows.map(r=>{
-      const b=(r.rv==null)?'<span class="nobar">non quantifié</span>':'<div class="bartrack"><div class="bar" style="width:'+Math.max(2,Math.min(100,r.rv))+'%"></div></div>';
-      return '<div class="orow" data-open="'+r.id+'" tabindex="0" role="button"><div class="tname">'+esc(r.t)
-        +'<span class="tnote">'+(r.note?esc(r.note)+" — ":"")+esc(r.nom)+"</span></div>"+b+'<div class="rtxt">'+esc(r.r)+"</div></div>";
-    }).join("");
+    +'<h2 class="pane-title">'+esc(orgSel)+'</h2><div class="pane-sub">'+rows.length+' entrées — cliquer une ligne pour ouvrir la fiche du syndrome.</div>'
+    +'<div class="panelbox"><div class="s-label">Gènes impliqués ('+genes.length+') — base indicative pour un panel, classés par risque maximal</div><div class="gc-genes">'
+    +genes.map(g=>'<span class="gpill click" tabindex="0" data-gene-go="'+esc(g)+'">'+esc(g)+"</span>").join("")
+    +'</div><button class="linkbtn" data-copy-genes="'+esc(genes.join(", "))+'">Copier la liste</button></div>'
+    +LEGEND
+    +rows.map(r=>'<div class="orow" data-open="'+r.id+'" tabindex="0" role="button"><div class="tname">'+esc(r.t)
+        +'<span class="tnote">'+(r.note?esc(r.note)+" — ":"")+esc(r.nom)+"</span></div>"+barHtml(r.t,r.rv)+'<div class="rtxt">'+esc(r.r)+"</div></div>").join("");
 }
 function viewGen(){
-  side.style.display="none"; layout.classList.add("nosb");
-  const q=norm(query);
-  if(!genSel){
-    const list=GENE_LIST.filter(g=>!q||norm(g).includes(q));
-    content.innerHTML='<div class="meta">Du gène vers le spectre : choisir un gène.</div><div class="chips">'
-      +list.map(g=>'<span class="chip" tabindex="0" data-gene-go="'+esc(g)+'"><b style="font-family:var(--mono)">'+esc(g)+"</b><small>"+GENES[g].size+"</small></span>").join("")
-      +(list.length?"":'<div class="empty">Aucun gène ne correspond.</div>')+"</div>";
+  showSide(false);
+  const toks=tokens();
+  if(!genSel||!GENES[genSel]){
+    const ls=GENE_LIST.filter(g=>!toks.length||toks.some(t=>norm(g).includes(t)));
+    content.innerHTML='<div class="meta">Du gène vers le spectre : risques propres au gène, variants récurrents, phénotype biallélique, bases de données et variants ClinVar.</div><div class="chips">'
+      +ls.map(g=>chip("data-gene-go",g,'<b class="mono">'+hi(g)+"</b>",GENES[g].size)).join("")
+      +(ls.length?"":'<div class="empty">Aucun gène ne correspond.</div>')+"</div>";
     return;
   }
-  const ds=DATA.filter(d=>GENES[genSel]&&GENES[genSel].has(d.id));
-  content.innerHTML='<button class="back" data-back="gen">← Tous les gènes</button>'
-    +'<div class="pane-title" style="font-family:var(--mono)">'+esc(genSel)+'</div><div class="pane-sub">'+ds.length+" syndrome(s) associé(s) — cliquer pour ouvrir la fiche.</div>"
-    +'<div class="grid">'+ds.map(miniCard).join("")+"</div>";
+  const g=genSel;
+  const ds=DATA.filter(d=>GENES[g].has(d.id));
+  let html='<button class="back" data-back="gen">← Tous les gènes</button>'
+    +'<h2 class="pane-title mono">'+esc(g)+'</h2><div class="pane-sub">'+ds.length+" syndrome(s) associé(s)</div>"+linksHtml(g);
+  if(BIAL[g]) html+='<div class="bial"><b>État biallélique :</b> '+esc(BIAL[g])+(BIAL_LINK[g]&&byId[BIAL_LINK[g]]?' — <a href="#" data-open="'+BIAL_LINK[g]+'">voir la fiche</a>':"")+" → analyse du conjoint à discuter (conseil reproductif).</div>";
+  html+=LEGEND;
+  ds.forEach(d=>{
+    const rows=sortRows(d.sp.filter(t=>{const rg=rowGenes(d,t);return !rg||rg.includes(g);}));
+    const desc=d.genes.filter(x=>geneSyms(x[0]).includes(g)).map(x=>x[1]).filter(Boolean);
+    const re=new RegExp("(^|[^A-Z0-9])"+g+"([^A-Z0-9]|$)");
+    const vs=d.va.filter(v=>re.test(v[0]));
+    html+='<div class="gsec"><div class="gsec-h"><span class="nm" data-open="'+d.id+'" tabindex="0" role="button">'+esc(d.nom)+' →</span><span class="gc-cat">'+esc(d.tr)+"</span></div>"
+      +(desc.length?'<div class="pane-sub">'+esc(desc.join(" ; "))+"</div>":"")
+      +rows.map(bar).join("")
+      +(vs.length?'<div class="s-label mt">Variants récurrents</div>'+vs.map(v=>'<div class="vrow"><code>'+esc(v[0])+"</code>"+(v[1]?" <span>— "+esc(v[1])+"</span>":"")+variantLink(v[0])+"</div>").join(""):"")
+      +"</div>";
+  });
+  html+='<div class="gsec"><div class="gsec-h"><span class="nm" style="cursor:default">Variants pathogènes les plus soumis dans ClinVar</span><span class="gc-cat">en ligne · NCBI</span></div>'
+    +'<div class="pane-sub">Requête en direct (aucune donnée patient transmise : seul le symbole du gène est envoyé à NCBI).</div>'
+    +'<div id="cv-box"><button class="btn" data-clinvar="'+esc(g)+'">Interroger ClinVar</button></div></div>';
+  content.innerHTML=html;
+}
+function viewDiag(){
+  showSide(false);
+  const toks=tokens();
+  let html='<div class="diag-intro"><h2 class="diag-title">Diagnostic différentiel</h2>'
+    +'<div class="diag-sub">Cocher les localisations tumorales (patient ou famille) et les signes associés : les syndromes compatibles sont classés par nombre d\'éléments couverts puis par niveau de risque.</div></div>';
+  html+='<div class="dgrid"><div class="dsel"><div class="dhead">Localisations tumorales</div>';
+  ORG_GROUPS.forEach(gr=>{
+    const os=gr[1].filter(o=>!toks.length||toks.some(t=>norm(o).includes(t))||diagSel.has(o));
+    if(!os.length) return;
+    html+='<div class="dgroup"><div class="dgroup-t">'+esc(gr[0])+'</div><div class="dchips">'
+      +os.map(o=>'<span class="dchip'+(diagSel.has(o)?" on":"")+'" tabindex="0" role="checkbox" aria-checked="'+diagSel.has(o)+'" data-diag="'+esc(o)+'">'+esc(o)+"</span>").join("")+"</div></div>";
+  });
+  html+='<div class="dhead mt">Signes associés (non tumoraux)</div>';
+  SIGNS.forEach(gr=>{
+    const ss=gr[1].filter(s=>!toks.length||toks.some(t=>norm(s[0]).includes(t))||sigSel.has(s[0]));
+    if(!ss.length) return;
+    html+='<div class="dgroup"><div class="dgroup-t">'+esc(gr[0])+'</div><div class="dchips">'
+      +ss.map(s=>'<span class="dchip sign'+(sigSel.has(s[0])?" on":"")+'" tabindex="0" role="checkbox" aria-checked="'+sigSel.has(s[0])+'" data-sign="'+esc(s[0])+'">'+esc(s[0])+"</span>").join("")+"</div></div>";
+  });
+  html+='</div><div class="dout">';
+  const nSel=diagSel.size+sigSel.size;
+  html+='<div class="diag-bar"><span class="diag-count">'+diagSel.size+" localisation(s) · "+sigSel.size+" signe(s)</span>"
+    +(nSel?'<button class="diag-clear" data-diag-clear>Tout effacer</button><button class="diag-clear" data-diag-link>Copier le lien de cette recherche</button>':"")+"</div>";
+  if(nSel){
+    const res=DATA.map(d=>{
+      const rows=d.sp.filter(t=>(t[1]||[]).some(o=>diagSel.has(o)));
+      const orgsHit=new Set(); rows.forEach(t=>(t[1]||[]).forEach(o=>{if(diagSel.has(o))orgsHit.add(o);}));
+      const signs=[...sigSel].filter(s=>SIGN_MAP[s]&&SIGN_MAP[s].includes(d.id));
+      const maxrv=rows.reduce((m,t)=>Math.max(m,isAgg(t)?0:(t[3]??0)),0);
+      return {d,rows,n:orgsHit.size+signs.length,signs,maxrv};
+    }).filter(x=>x.n>0).sort((a,b)=>b.n-a.n||b.maxrv-a.maxrv);
+    html+='<div class="hitgroup">'+res.length+" syndrome(s) compatible(s)</div>";
+    html+=res.map(x=>'<div class="dres'+(x.n===nSel?" full":"")+'" data-open="'+x.d.id+'" tabindex="0" role="button">'
+        +'<div class="dres-head"><span class="dres-name">'+esc(x.d.nom)+'</span>'
+        +'<span class="dres-score">'+x.n+" / "+nSel+" élément(s)</span></div>"
+        +'<div class="dres-genes">'+esc(synGenes(x.d).slice(0,8).join(" · "))+"</div>"
+        +(x.signs.length?'<div class="dres-signs">'+x.signs.map(s=>'<span class="stag">'+esc(s)+"</span>").join("")+"</div>":"")
+        +sortRows(x.rows).map(bar).join("")+"</div>").join("")||'<div class="empty">Aucun syndrome ne couvre ces éléments.</div>';
+  } else {
+    html+='<div class="empty">Cocher des éléments dans la colonne de gauche. Exemple : « Estomac » + « Sein » fait remonter CDH1 (gastrique diffus + lobulaire) ; « Rein » + « Pneumothorax spontanés » fait remonter la sclérose tubéreuse et Birt-Hogg-Dubé ; « Polypose adénomateuse » + « Consanguinité » oriente vers MUTYH, NTHL1, CMMRD.</div>';
+  }
+  content.innerHTML=html+"</div></div>";
+}
+function viewMat(){
+  showSide(true);
+  const r=searched(), ds=r.main.concat(r.full);
+  const cols=ORG_ORDER;
+  let html='<div class="meta">Vue d\'ensemble syndromes × organes : l\'intensité reflète le risque maximal estimé ; « • » = association connue mais non quantifiée. Les filtres (catégorie, transmission, recherche) s\'appliquent. Cliquer une case ou un nom pour ouvrir la fiche.</div>';
+  const SHORT={"Intestin grêle / duodénum":"Grêle / duodénum","Phéochromocytome / paragangliome":"Phéo / paragangliome","Voies urinaires / vessie":"Voies urinaires","Tissus mous / sarcomes":"Tissus mous","Foie / voies biliaires":"Foie / v. biliaires","Surrénale (cortex)":"Corticosurrénale"};
+  html+='<div class="mwrap"><table class="mx"><thead><tr><th class="corner"></th>'+cols.map(o=>'<th class="org" scope="col"><span data-org-go="'+esc(o)+'" title="'+esc(o)+'">'+esc(SHORT[o]||o)+"</span></th>").join("")+"</tr></thead><tbody>";
+  ds.forEach(d=>{
+    const m={}; d.sp.forEach(t=>(t[1]||[]).forEach(o=>{const v=isAgg(t)?-1:(t[3]??-1);const prev=m[o];if(!prev||v>prev.v)m[o]={v,t};}));
+    html+='<tr><th class="syn" scope="row" data-open="'+d.id+'" tabindex="0" title="'+esc(d.nom)+'">'+esc(d.nom)+'<span class="gsub">'+esc(synGenes(d).slice(0,3).join(" "))+"</span></th>";
+    cols.forEach(o=>{
+      const c=m[o];
+      if(!c){html+="<td></td>";return;}
+      const tip=esc(o+" — "+c.t[0]+" : "+c.t[2]);
+      if(c.v<0) html+='<td class="q" data-open="'+d.id+'" title="'+tip+'"></td>';
+      else html+='<td data-open="'+d.id+'" title="'+tip+'" style="background:color-mix(in srgb,var(--acc) '+Math.round(12+88*Math.min(100,c.v)/100)+'%,var(--card))"'+(c.v>=50?' class="hi"':"")+"></td>";
+    });
+    html+="</tr>";
+  });
+  html+="</tbody></table></div>";
+  if(!ds.length) html='<div class="empty">Aucune fiche ne correspond aux filtres.</div>';
+  content.innerHTML=html;
+  const c=$("count"); if(c) c.textContent=ds.length+" / "+DATA.length+" syndromes affichés";
 }
 
-/* ---------- navigation ---------- */
+/* ---------- navigation & URL (liens partageables, bouton retour) ---------- */
+function stateHash(){
+  let h="#/"+mode;
+  if(mode==="org"&&orgSel) h+="/"+enc(orgSel);
+  if(mode==="gen"&&genSel) h+="/"+enc(genSel);
+  const p=[];
+  if(mode==="diag"){if(diagSel.size)p.push("o="+enc([...diagSel].join("~")));if(sigSel.size)p.push("s="+enc([...sigSel].join("~")));}
+  if(panelId) p.push("f="+panelId);
+  return h+(p.length?"?"+p.join("&"):"");
+}
+let lastHash="";
+function writeHash(push){
+  const h=stateHash(); if(h===location.hash||h===lastHash&&!push) return;
+  lastHash=h;
+  try{history[push?"pushState":"replaceState"](null,"",h);}catch(e){location.hash=h;}
+}
+function readHash(){
+  const h=location.hash.replace(/^#\/?/,""); lastHash=location.hash;
+  const [path,qs]=h.split("?");
+  const parts=(path||"").split("/");
+  mode=["syn","org","gen","diag","mat"].includes(parts[0])?parts[0]:"syn";
+  orgSel=mode==="org"&&parts[1]?decodeURIComponent(parts[1]):null;
+  genSel=mode==="gen"&&parts[1]?decodeURIComponent(parts[1]):null;
+  const P=new URLSearchParams(qs||"");
+  if(mode==="diag"){
+    diagSel=new Set((P.get("o")||"").split("~").filter(Boolean).filter(o=>ORGS[o]));
+    sigSel=new Set((P.get("s")||"").split("~").filter(Boolean).filter(s=>SIGN_MAP[s]));
+  }
+  syncTabs(); render();
+  const f=P.get("f");
+  if(f&&byId[f]){if(panelId!==f)openPanel(f,false);} else closePanel(false);
+}
 function render(){
   if(mode==="syn") viewSyn();
   else if(mode==="org") viewOrg();
   else if(mode==="diag") viewDiag();
+  else if(mode==="mat") viewMat();
   else viewGen();
 }
-function syncTabs(){document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x.dataset.mode===mode));}
-document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
-  mode=b.dataset.mode; orgSel=null; genSel=null; syncTabs(); render();
-}));
-qInput.addEventListener("input",()=>{query=qInput.value.trim(); if(mode==="org")orgSel=null; if(mode==="gen")genSel=null; render();});
+function go(m,sel,push=true){
+  mode=m; if(m==="org")orgSel=sel||null; if(m==="gen")genSel=sel||null;
+  if(panelId){panelId=null;panel.classList.remove("open");overlay.classList.remove("open");document.body.style.overflow="";}
+  syncTabs(); render(); writeHash(push); window.scrollTo({top:0});
+}
+function syncTabs(){document.querySelectorAll(".tab").forEach(x=>{const on=x.dataset.mode===mode;x.classList.toggle("on",on);x.setAttribute("aria-selected",on);});}
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>go(b.dataset.mode,null)));
+let qT=null;
+qInput.addEventListener("input",()=>{
+  query=qInput.value.trim();
+  if(mode==="org")orgSel=null; if(mode==="gen")genSel=null;
+  render(); clearTimeout(qT); qT=setTimeout(()=>writeHash(false),400);
+});
 document.addEventListener("click",e=>{
+  if(e.target.closest("#panel")&&!e.target.closest("[data-org-go],[data-gene-go],[data-open]")) return;
   const dc=e.target.closest("[data-diag]");
-  if(dc){const o=dc.dataset.diag; diagSel.has(o)?diagSel.delete(o):diagSel.add(o); render(); return;}
-  if(e.target.closest("[data-diag-clear]")){diagSel.clear(); render(); return;}
-  const open=e.target.closest("[data-open]");
-  if(open){openPanel(open.dataset.open); return;}
+  if(dc){const o=dc.dataset.diag; diagSel.has(o)?diagSel.delete(o):diagSel.add(o); render(); writeHash(false); return;}
+  const sg=e.target.closest("[data-sign]");
+  if(sg){const s=sg.dataset.sign; sigSel.has(s)?sigSel.delete(s):sigSel.add(s); render(); writeHash(false); return;}
+  if(e.target.closest("[data-diag-clear]")){diagSel.clear(); sigSel.clear(); render(); writeHash(false); return;}
+  if(e.target.closest("[data-diag-link]")){copy(location.href,"Lien de la recherche copié"); return;}
+  const cg=e.target.closest("[data-copy-genes]"); if(cg){copy(cg.dataset.copyGenes,"Liste de gènes copiée"); return;}
+  const cv=e.target.closest("[data-clinvar]"); if(cv){loadClinvar(cv.dataset.clinvar,$("cv-box")); return;}
   const og=e.target.closest("[data-org-go]");
-  if(og){mode="org"; orgSel=og.dataset.orgGo; syncTabs(); render(); window.scrollTo({top:0}); return;}
+  if(og){e.preventDefault(); go("org",og.dataset.orgGo); return;}
   const gg=e.target.closest("[data-gene-go]");
-  if(gg){mode="gen"; genSel=gg.dataset.geneGo; syncTabs(); render(); window.scrollTo({top:0}); return;}
+  if(gg){e.preventDefault(); go("gen",gg.dataset.geneGo); return;}
+  const open=e.target.closest("[data-open]");
+  if(open){e.preventDefault(); openPanel(open.dataset.open); return;}
   const back=e.target.closest("[data-back]");
-  if(back){if(back.dataset.back==="org")orgSel=null; else genSel=null; render(); return;}
+  if(back){go(back.dataset.back,null); return;}
 });
 document.addEventListener("keydown",e=>{
   if(e.key==="Enter"||e.key===" "){
-    const t=e.target.closest&&e.target.closest("[data-open],[data-org-go],[data-gene-go],[data-diag]");
-    if(t){e.preventDefault(); t.click();}
+    const t=e.target.closest&&e.target.closest("[data-open],[data-org-go],[data-gene-go],[data-diag],[data-sign]");
+    if(t&&t.tagName!=="A"&&t.tagName!=="BUTTON"){e.preventDefault(); t.click();}
   }
 });
-render();
+window.addEventListener("popstate",()=>{if(location.hash!==lastHash)readHash();});
+window.addEventListener("hashchange",()=>{if(location.hash!==lastHash)readHash();});
+readHash();
 </script>
 </body>
 </html>
